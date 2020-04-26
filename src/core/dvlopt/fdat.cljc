@@ -158,7 +158,7 @@
 
 
   ([mta registry]
-
+  
    (-build mta
            (::k mta)
            (::args mta)
@@ -295,6 +295,8 @@
 
 
 
+
+
 #?(:clj
 
    (defn ns-sym
@@ -328,13 +330,16 @@
 
 
 
+#?(:clj
 (defmacro ?
 
   ""
 
   [[f-sym & args :as call]]
 
-  (let [f-sym-2 (ns-sym f-sym)]
+  (let [f-sym-2 (if (symbol? f-sym)
+                  (ns-sym f-sym)
+                  (throw (IllegalArgumentException. (str "Function name must be symbol: " f-sym))))]
     (if (ns-enabled? (symbol (namespace f-sym-2)))
       (let [args-2 (take (count args)
                          (repeatedly gensym))]
@@ -345,3 +350,9 @@
                   '~f-sym-2
                   (vector ~@args-2))))
       call)))
+)
+
+
+
+
+

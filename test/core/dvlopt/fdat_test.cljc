@@ -13,6 +13,7 @@
 ;;;;;;;;;;
 
 
+
 (defn pre-inc
 
   ([f]
@@ -80,20 +81,34 @@
 
 
 
-(defn rebuild-deep
+(defn rebuild-serde
+
+  ""
+
+  [imeta n serialize deserialize]
+
+  (if (pos? n)
+    (recur (-> imeta
+               serialize
+               deserialize)
+           (dec n)
+           serialize
+           deserialize)
+    imeta))
+
+
+
+
+(defn rebuild-n
 
   ""
 
   [imeta n]
 
-  (if (pos? n)
-    (recur (-> imeta
-               fdat/datafy-deep
-               fdat/build-deep)
-           (dec n))
-    imeta))
-
-
+  (rebuild-serde imeta
+                 n
+                 fdat/datafy-deep
+                 fdat/build-deep))
 
 
 
@@ -103,16 +118,20 @@
   (t/is (= 12
            (f 3)
            (f-built 3)
-           ((rebuild-deep f
-                          10) 3))
+           ((rebuild-n f
+                       10) 3))
         "Rebuilding a function")
-
 
   (t/is (= (take 100
                  (range))
            (take 100
                  sq-built)
            (take 100
-                 (rebuild-deep sq
-                               10)))
+                 (rebuild-n sq
+                            10)))
         "Rebuilding an infinite sequence"))
+
+
+
+
+
