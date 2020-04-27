@@ -34,9 +34,15 @@
 
   ""
 
-  []
+  ([]
 
-  @-*registry)
+   @-*registry)
+
+
+  ([k]
+
+   (get (registry)
+        k)))
 
 
 
@@ -134,85 +140,7 @@
 ;;;;;;;;;; Datifying IMetas and rebuilding them
 
 
-(defprotocol IMemento
-
-  ""
-
-  (build [this]
-         [this registry])
-
-
-  (rebuild [this]
-           [this registry]))
-
-
-
-
-(defn- -build
-
-  ;;
-
-  [mta k args registry fmap-args]
-
-  (let [f (or (get registry
-                   k)
-              (throw (ex-info (str "Key not found to rebuild from data: " k)
-                              {::args     args
-                               ::k        k
-                               ::registry registry})))]
-    (vary-meta (if (seq args)
-                 (apply f
-                        (fmap-args args))
-                 (f))
-               merge
-               (assoc mta
-                      `clj.protocols/datafy
-                      -afy-imeta))))
-
-
-
-
-(deftype Memento [mta]
-
-
-  clj.protocols/Datafiable
-
-    (datafy [_]
-      mta)
-
-
-  IMemento
-
-    (build [this]
-      (build this
-             (registry)))
-
-
-    (build [this registry]
-      (-build mta
-              (::k mta)
-              (::args mta)
-              registry
-              identity))
-
-
-
-    (rebuild [this]
-      (rebuild this
-               (registry)))
-
-
-    (rebuild [this registry]
-      (-build mta
-              (::k mta)
-              (::args mta)
-              registry
-              (partial map
-                       (fn recursive [arg]
-                         (if (instance? Memento
-                                        arg)
-                           (rebuild arg)
-                           arg))))))
+(defrecord Memento [snapshot])
 
 
 
@@ -221,61 +149,12 @@
 
   ""
 
-  [mta]
-
-  (Memento. mta))
-
-
-
-
-(defn memento?
-
-  ""
-
   [x]
 
-  (instance? Memento
-             x))
-
-
-
-
-(defn- -afy-imeta
-
-  ;;
-
-  [imeta]
-
-  (Memento. (dissoc (meta imeta)
-                    `clj.protocols/datafy)))
-
-
-
-
-(defn afy
-
-  ""
-
-  [x]
-
-  (clj.protocols/datafy x))
-
-
-
-
-(defn- -recall
-
-  ""
-
-  [imeta k mta]
-
-  (vary-meta imeta
-             merge
-             (-> mta
-                 (assoc ::k
-                        k)
-                 (assoc `clj.protocols/datafy
-                        -afy-imeta))))
+  (let [mta (meta x)]
+    (when (contains? mta
+                     ::k)
+      (Memento. mta))))
 
 
 
@@ -284,46 +163,52 @@
 
   ""
 
+  ([mta]
+
+   (recall registry
+           mta))
+
+
+  ([regsitry mta]
+
+   (let [args (::args mta)
+         k    (::k mta)
+         f    (or (registry k)
+                  (throw (ex-info (str "Key not found to rebuild from data: " k)
+                                  {::args     args
+                                   ::k        k
+                                   ::registry registry})))]
+     (vary-meta (if (seq args)
+                  (apply f
+                         args)
+                  (f))
+                merge
+                mta))))
+
+
+
+
+(defn snapshot
+
+  ""
+
   ([imeta k]
 
-   (-recall imeta
-            k
-            nil))
+   (vary-meta imeta
+              assoc
+              ::k
+              k))
 
 
   ([imeta k args]
 
-   (-recall imeta
-            k
-            (some->> (not-empty args)
-                     (assoc {}
-                            ::args)))))
-
-
-
-
-(defn reg-recall
-
-  ""
-
-  ([imeta f k]
-
-   (reg-recall imeta
-               f
-               k
-               nil))
-
-
-  ([imeta f k args]
-
-   (register k
-             f)
-   (recall imeta
-           k
-           args)))
-
-
-
+   (if-some [args-2 (not-empty args)]
+     (vary-meta imeta
+                merge
+                {::args args
+                 ::k    k})
+     (snapshot imeta
+               k))))
 
 
 
@@ -359,8 +244,8 @@
                                  (repeatedly gensym))]
                 `(let ~(vec (interleave args-2
                                        args))
-                   (recall ~(list* f-sym-2
-                                   args-2)
-                           '~f-sym-2
-                           (vector ~@args-2))))
+                   (snapshot ~(list* f-sym-2
+                                     args-2)
+                             '~f-sym-2
+                             (vector ~@args-2))))
               call))))

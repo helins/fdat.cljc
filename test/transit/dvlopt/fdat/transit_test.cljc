@@ -50,16 +50,16 @@
 
 
 
-(defn rebuild-n
+(defn recall-n
 
   ""
 
   [imeta n]
 
-  (fdat-test/rebuild-serde imeta
-                           n
-                           serialize
-                           deserialize))
+  (fdat-test/recall-serde imeta
+                          n
+                          serialize
+                          deserialize))
 
 
 
@@ -67,25 +67,26 @@
 ;;;;;;;;;;
 
 
-(t/deftest build
+(t/deftest recall
 
-  (let [f-data  (serialize fdat-test/f)
-        f-built (deserialize f-data)]
+  (let [f-data     (serialize fdat-test/f)
+        f-recalled (deserialize f-data)]
     (t/is (= 12
              (fdat-test/f 3)
-             (f-built 3)
-             ((rebuild-n fdat-test/f
-                         10) 3))
+             (f-recalled 3)
+             ((recall-n f-recalled
+                        10)
+              3))
           "Rebuilding a function"))
 
 
-   (let [sq-data  (serialize fdat-test/sq)
-         sq-built (deserialize sq-data)]
+   (let [sq-data     (serialize fdat-test/sq)
+         sq-recalled (deserialize sq-data)]
     (t/is (= (take 100
-                   (range))
+                   fdat-test/sq)
              (take 100
-                   fdat-test/sq-built)
+                   sq-recalled)
              (take 100
-                   (rebuild-n fdat-test/sq
-                              10)))
+                   (recall-n sq-recalled
+                             10)))
           "Rebuilding an infinite sequence")))

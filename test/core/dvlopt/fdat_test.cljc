@@ -57,31 +57,31 @@
      (fdat/? (pre-inc (fdat/? (mult 3)))))
 
 
-(def f-data
-     (fdat/afy f))
+(def f-memento
+     (fdat/memento f))
 
 
-(def f-built
-     (fdat/build f-data))
+(def f-recalled
+     (fdat/recall (:snapshot f-memento)))
 
-(def f-2 (fn [x] (+ x 2)))
+
 
 
 (def sq
      (fdat/? (range)))
 
 
-(def sq-data
-     (fdat/afy sq))
+(def sq-memento
+     (fdat/memento sq))
 
 
-(def sq-built
-     (fdat/build sq-data))
+(def sq-recalled
+     (fdat/recall (:snapshot sq-memento)))
 
 
 
 
-(defn rebuild-serde
+(defn recall-serde
 
   ""
 
@@ -99,35 +99,36 @@
 
 
 
-(defn rebuild-n
+(defn recall-n
 
   ""
 
   [imeta n]
 
-  (rebuild-serde imeta
-                 n
-                 fdat/afy
-                 fdat/build))
+  (recall-serde imeta
+                n
+                fdat/memento
+                (comp fdat/recall
+                      :snapshot)))
 
 
 
 
-(t/deftest build
+(t/deftest recall
 
   (t/is (= 12
            (f 3)
-           (f-built 3)
-           ((rebuild-n f
-                       10) 3))
+           (f-recalled 3)
+           ((recall-n f
+                      10) 3))
         "Rebuilding a function")
 
   (t/is (= (take 100
                  (range))
            (take 100
-                 sq-built)
+                 sq-recalled)
            (take 100
-                 (rebuild-n sq
+                 (recall-n sq
                             10)))
         "Rebuilding an infinite sequence"))
 

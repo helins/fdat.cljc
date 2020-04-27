@@ -20,10 +20,10 @@
 
   [imeta n]
 
-  (fdat-test/rebuild-serde imeta
-                           n
-                           nippy/freeze
-                           nippy/thaw))
+  (fdat-test/recall-serde imeta
+                          n
+                          nippy/freeze
+                          nippy/thaw))
 
 
 
@@ -35,15 +35,17 @@
      (nippy/freeze fdat-test/f))
 
 
-(def f-built
+(def f-recalled
      (nippy/thaw f-data))
+
+
 
 
 (def sq-data
      (nippy/freeze fdat-test/sq))
 
 
-(def sq-built
+(def sq-rebuild
      (nippy/thaw sq-data))
 
 
@@ -56,17 +58,17 @@
 
   (t/is (= 12
            (fdat-test/f 3)
-           (fdat-test/f-built 3)
-           ((rebuild-n fdat-test/f
+           (f-recalled 3)
+           ((rebuild-n f-recalled
                        10) 3))
         "Rebuilding a function")
 
 
   (t/is (= (take 100
-                 (range))
+                 fdat-test/sq)
            (take 100
-                 fdat-test/sq-built)
+                 sq-rebuild)
            (take 100
-                 (rebuild-n fdat-test/sq
+                 (rebuild-n sq-rebuild
                             10)))
         "Rebuilding an infinite sequence"))
