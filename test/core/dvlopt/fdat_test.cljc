@@ -58,13 +58,13 @@
 
 
 (def f-data
-     (fdat/datafy-deep f))
+     (fdat/afy f))
 
 
 (def f-built
-     (fdat/build-deep f-data))
+     (fdat/build f-data))
 
-
+(def f-2 (fn [x] (+ x 2)))
 
 
 (def sq
@@ -72,11 +72,11 @@
 
 
 (def sq-data
-     (fdat/datafy-deep sq))
+     (fdat/afy sq))
 
 
 (def sq-built
-     (fdat/build-deep sq-data))
+     (fdat/build sq-data))
 
 
 
@@ -107,8 +107,8 @@
 
   (rebuild-serde imeta
                  n
-                 fdat/datafy-deep
-                 fdat/build-deep))
+                 fdat/afy
+                 fdat/build))
 
 
 

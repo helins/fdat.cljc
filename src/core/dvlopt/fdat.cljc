@@ -4,7 +4,16 @@
 
   {:author "Adam Helinski"}
 
-  (:require [dvlopt.void :as void]))
+  (:require [clojure.core.protocols :as clj.protocols]
+            [dvlopt.void            :as void]))
+
+
+
+
+;;;;;;;;;; Gathering declarations
+
+
+(declare ^:private -afy-imeta)
 
 
 
@@ -122,18 +131,32 @@
 
 
 
-;;;;;;;;;; Re-building IMetas from data
+;;;;;;;;;; Datifying IMetas and rebuilding them
+
+
+(defprotocol IMemento
+
+  ""
+
+  (build [this]
+         [this registry])
+
+
+  (rebuild [this]
+           [this registry]))
+
+
 
 
 (defn- -build
 
-  ""
+  ;;
 
   [mta k args registry fmap-args]
 
   (let [f (or (get registry
                    k)
-              (throw (ex-info "Key not found to rebuild from data"
+              (throw (ex-info (str "Key not found to rebuild from data: " k)
                               {::args     args
                                ::k        k
                                ::registry registry})))]
@@ -142,154 +165,162 @@
                         (fmap-args args))
                  (f))
                merge
-               mta)))
+               (assoc mta
+                      `clj.protocols/datafy
+                      -afy-imeta))))
 
 
 
 
-(defn build
-
-  ""
-
-  ([mta]
-
-   (build mta
-          (registry)))
+(deftype Memento [mta]
 
 
-  ([mta registry]
-  
-   (-build mta
-           (::k mta)
-           (::args mta)
-           registry
-           identity)))
+  clj.protocols/Datafiable
+
+    (datafy [_]
+      mta)
+
+
+  IMemento
+
+    (build [this]
+      (build this
+             (registry)))
+
+
+    (build [this registry]
+      (-build mta
+              (::k mta)
+              (::args mta)
+              registry
+              identity))
 
 
 
-
-(defn build-deep
-
-  ""
-
-  ([mta]
-
-   (build-deep mta
+    (rebuild [this]
+      (rebuild this
                (registry)))
 
 
-  ([mta registry]
-
-   (-build mta
-           (::k mta)
-           (::args mta)
-           registry
-           (fn fmap-args [args]
-             (map (fn recursive [arg]
-                    (if-some [k (::k arg)]
-                      (-build arg
-                              k
-                              (::args arg)
-                              registry
-                              fmap-args)
-                      arg))
-                  args)))))
+    (rebuild [this registry]
+      (-build mta
+              (::k mta)
+              (::args mta)
+              registry
+              (partial map
+                       (fn recursive [arg]
+                         (if (instance? Memento
+                                        arg)
+                           (rebuild arg)
+                           arg))))))
 
 
 
-(defn- -datafy
-  
+
+(defn memento
+
+  ""
+
+  [mta]
+
+  (Memento. mta))
+
+
+
+
+(defn memento?
+
+  ""
+
+  [x]
+
+  (instance? Memento
+             x))
+
+
+
+
+(defn- -afy-imeta
+
   ;;
 
-  [fmap-mta x]
+  [imeta]
 
-  (let [mta (meta x)]
-    (if (contains? mta
-                   ::k)
-      (fmap-mta mta)
-      (if (fn? x)
-        (throw (ex-info "Function does not have sufficient meta for datafication"
-                        {::fn x}))
-        x))))
+  (Memento. (dissoc (meta imeta)
+                    `clj.protocols/datafy)))
 
 
 
 
-(defn datafy
+(defn afy
 
   ""
 
   [x]
 
-  (-datafy identity
-           x))
+  (clj.protocols/datafy x))
 
 
 
 
-(defn datafy-deep
+(defn- -recall
 
   ""
 
-  [x]
+  [imeta k mta]
 
-  (-datafy (fn recur-args [mta]
-             (if-some [args (get mta
-                                 ::args)]
-               (assoc mta
-                      ::args
-                      (map datafy-deep
-                           args))
-               mta))
-           x))
+  (vary-meta imeta
+             merge
+             (-> mta
+                 (assoc ::k
+                        k)
+                 (assoc `clj.protocols/datafy
+                        -afy-imeta))))
 
 
 
 
-(defn track
+(defn recall
 
   ""
 
   ([imeta k]
 
-   (vary-meta imeta
-               assoc
-               ::k
-               k))
+   (-recall imeta
+            k
+            nil))
 
 
   ([imeta k args]
 
-   (if-some [args-2 (not-empty args)]
-     (vary-meta imeta
-                merge
-                {::args args-2
-                 ::k    k})
-     (track imeta
-            k))))
+   (-recall imeta
+            k
+            (some->> (not-empty args)
+                     (assoc {}
+                            ::args)))))
 
 
 
 
-(defn reg-track
+(defn reg-recall
 
   ""
 
   ([imeta f k]
 
-   (reg-track imeta
-              f
-              k
-              nil))
+   (reg-recall imeta
+               f
+               k
+               nil))
 
 
   ([imeta f k args]
 
    (register k
              f)
-   (track imeta
-          k
-          args)))
+   (recall imeta
+           k
+           args)))
 
 
 
@@ -297,62 +328,39 @@
 
 
 
-#?(:clj
+#?(:clj (defn ns-sym
 
-   (defn ns-sym
-
-     ""
-
-     [sym]
-
-     (if (namespace sym)
-       sym
-       (or (some-> (ns-resolve 'clojure.core
-                               sym)
-                   symbol)
-           (symbol (str *ns*)
-                   (str sym))))))
-
-
-
-#?(:clj
-
-   (defn- -k
- 
-     ;;
- 
-     [k]
- 
-     (if (symbol? k)
-       (ns-sym k)
-       k)))
+          ""
+     
+          [sym]
+     
+          (if (namespace sym)
+            sym
+            (or (some-> (ns-resolve 'clojure.core
+                                    sym)
+                        symbol)
+                (symbol (str *ns*)
+                        (str sym))))))
 
 
 
 
-#?(:clj
-(defmacro ?
+#?(:clj (defmacro ?
 
-  ""
+          ""
 
-  [[f-sym & args :as call]]
+          [[f-sym & args :as call]]
 
-  (let [f-sym-2 (if (symbol? f-sym)
-                  (ns-sym f-sym)
-                  (throw (IllegalArgumentException. (str "Function name must be symbol: " f-sym))))]
-    (if (ns-enabled? (symbol (namespace f-sym-2)))
-      (let [args-2 (take (count args)
-                         (repeatedly gensym))]
-        `(let ~(vec (interleave args-2
-                               args))
-           (track ~(list* f-sym-2
-                          args-2)
-                  '~f-sym-2
-                  (vector ~@args-2))))
-      call)))
-)
-
-
-
-
-
+          (let [f-sym-2 (if (symbol? f-sym)
+                          (ns-sym f-sym)
+                          (throw (IllegalArgumentException. (str "Function name must be symbol: " f-sym))))]
+            (if (ns-enabled? (symbol (namespace f-sym-2)))
+              (let [args-2 (take (count args)
+                                 (repeatedly gensym))]
+                `(let ~(vec (interleave args-2
+                                       args))
+                   (recall ~(list* f-sym-2
+                                   args-2)
+                           '~f-sym-2
+                           (vector ~@args-2))))
+              call))))

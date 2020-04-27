@@ -11,31 +11,7 @@
 
 
 
-;;;;;;;;;;
-
-
-(def f-data
-     (nippy/freeze fdat-test/f))
-
-
-(def f-built
-     (nippy/thaw f-data))
-
-
-
-
-(def sq
-     (fdat/? (range)))
-
-
-(def sq-data
-     (fdat/datafy-deep sq))
-
-
-(def sq-built
-     (fdat/build-deep sq-data))
-
-
+;;;;;;;;;; Ser/de
 
 
 (defn rebuild-n
@@ -50,6 +26,30 @@
                            nippy/thaw))
 
 
+
+
+;;;;;;;;;;
+
+
+(def f-data
+     (nippy/freeze fdat-test/f))
+
+
+(def f-built
+     (nippy/thaw f-data))
+
+
+(def sq-data
+     (nippy/freeze fdat-test/sq))
+
+
+(def sq-built
+     (nippy/thaw sq-data))
+
+
+
+
+;;;;;;;;;;
 
 
 (t/deftest build
