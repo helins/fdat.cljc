@@ -1,5 +1,7 @@
 (ns dvlopt.fdat.nippy-test
 
+  "Testing ser/de using Nippy."
+
   {:author "Adam Helinski"}
 
   (:require [clojure.test      :as t]
@@ -16,7 +18,7 @@
 
 (defn rebuild-n
 
-  ""
+  "Ser/de `n` times `imeta` using Nippy."
 
   [imeta n]
 
@@ -28,7 +30,7 @@
 
 
 
-;;;;;;;;;;
+;;;;;;;;;; Used tests tests, also useful for dev
 
 
 (def f-data
@@ -51,7 +53,7 @@
 
 
 
-;;;;;;;;;;
+;;;;;;;;;; Assertions
 
 
 (t/deftest build

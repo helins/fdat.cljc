@@ -1,5 +1,7 @@
 (ns dvlopt.fdat-test
 
+  "Testing the core API."
+
   {:author "Adam Helinski"}
 
   (:require [clojure.test      :as t]
@@ -10,15 +12,50 @@
 
 
 
-;;;;;;;;;;
+;;;;;;;;;; Useful for testing ser/de in other namespaces
 
+
+(defn recall-serde
+
+  "Ser/de `n` times `imeta`."
+
+  [imeta n serialize deserialize]
+
+  (if (pos? n)
+    (recur (-> imeta
+               serialize
+               deserialize)
+           (dec n)
+           serialize
+           deserialize)
+    imeta))
+
+
+
+
+(defn recall-n
+
+  "Basic shallow recalling using [[recall-serde]]."
+
+  [imeta n]
+
+  (recall-serde imeta
+                n
+                fdat/memento
+                (comp fdat/recall
+                      :snapshot)))
+
+
+
+
+;;;;;;;;;; Curriable functions
 
 
 (defn pre-inc
 
   ([f]
 
-   (fn curry [n]
+   (fn curried [n]
      (pre-inc f
               n)))
 
@@ -34,7 +71,7 @@
 
   ([n]
 
-   (fn curry [m]
+   (fn curried [m]
      (mult n
            m)))
 
@@ -46,11 +83,16 @@
 
 
 
+;; Adding those functions to the global registry.
+
 (fdat/register {'clojure.core/range  range
                 `mult                [1 mult]
                 `pre-inc             [1 pre-inc]})
 
 
+
+
+;;;;;;;;;; Used tests tests, also useful for dev
 
 
 (def f
@@ -81,37 +123,7 @@
 
 
 
-(defn recall-serde
-
-  ""
-
-  [imeta n serialize deserialize]
-
-  (if (pos? n)
-    (recur (-> imeta
-               serialize
-               deserialize)
-           (dec n)
-           serialize
-           deserialize)
-    imeta))
-
-
-
-
-(defn recall-n
-
-  ""
-
-  [imeta n]
-
-  (recall-serde imeta
-                n
-                fdat/memento
-                (comp fdat/recall
-                      :snapshot)))
-
-
+;;;;;;;;;; Assertions
 
 
 (t/deftest recall

@@ -1,6 +1,8 @@
 (ns dvlopt.fdat
 
-  ""
+  "Serialization and deserialization utilities for IMetas such as function and (possbily) infinite sequences.
+
+   See README for the big picture."
 
   {:author "Adam Helinski"}
 
@@ -24,7 +26,7 @@
 
 (def ^:private -*registry
 
-  ;;
+  ;; Global map of k -> f.
 
   (atom {}))
 
@@ -33,7 +35,7 @@
 
 (defn registry
 
-  ""
+  "Access to the global registry."
 
   ([]
 
@@ -50,7 +52,7 @@
 
 (defn- -variadic-applier
 
-  ;;
+  ;; Default applier.
 
   [f]
 
@@ -63,7 +65,7 @@
 
 (def ^:private -appliers
 
-  ;;
+  ;; All appliers providing optimized destructuring and application of args.
 
   {0         (fn applier-n-0 [f]
                (fn apply-n-0 [_args]
@@ -101,7 +103,21 @@
 
 (defn register
 
-  ""
+  "Adds or removes functions for keys.
+
+   `k->f` is a map where `k` is an arbitrary key (often a qualified symbol or keyword) and `f` specifies
+   a function such as:
+
+   ```clojure
+   {'some.ns/my-fn-1 my-fn-1      ;; Args can by variadic
+    'some.ns/my-fn-2 [2 my-fn-2]  ;; Optimized destructuring for 2 args
+    'some.ns/my-fn-3 nil          ;; Removes that key
+    }
+   ```
+
+   Providing the number of arguments will result in faster function application by using destructing instead
+   of `apply`. Arities 0 to 8 can be optimized that way. Beyond, reverts to using `apply`. Providing `:no-apply`
+   instead of a number means the function will not be called, simply returned in exchange of args."
 
   ([k->f]
 
@@ -129,11 +145,6 @@
 
 
 
-;;;;;;;;;;
-
-
-
-
 ;;;;;;;;;; Datifying IMetas and rebuilding them
 
 
@@ -144,7 +155,16 @@
 
 (defn memento
 
-  ""
+  "If `x` has at least a ::key in it metadata, returns a Memento.
+  
+   Nil otherwise. Safe to call on any value.
+  
+   Serializers typically deal in concrete types. Here is one.
+  
+   A Memento simply store metadata under `:snapshot`. Those metadata can then
+   be given back to the serializer as a simple map.
+  
+   See also [[recall]]."
 
   [x]
 
@@ -158,18 +178,27 @@
 
 (defn recall
 
-  ""
+  "\"Recall how it was using its former metadata.\"
 
-  ([mta]
+   Given `metadata` containing a ::key and (if needed) ::args, rebuilds an IMeta by calling
+   the appropriate function from the `registry` (global if not provided).
+ 
+   Used as a last step in deserialization. Is NOT recursive, meaning that if an arg need to be
+   recalled, it will not. This is actually what is needed as deserializers work that way, in
+   a depth-first manner.
+ 
+   See also [[memento]]."
+
+  ([metadata]
 
    (recall registry
-           mta))
+           metadata))
 
 
-  ([regsitry mta]
+  ([regsitry metadata]
 
-   (let [args (::args mta)
-         k    (::k mta)
+   (let [args (::args metadata)
+         k    (::k metadata)
          f    (or (registry k)
                   (throw (ex-info (str "Key not found to rebuild from data: " k)
                                   (void/assoc {::k        k
@@ -178,14 +207,18 @@
                                               args))))]
      (vary-meta (f args)
                 merge
-                mta))))
+                metadata))))
 
 
 
 
 (defn snapshot
 
-  ""
+  "Manual annotations of how `imeta` can be [[recall]]ed using `k` and `args`.
+   
+   Simply puts that information in its metadata.
+
+   Typically, the [[?]] is prefered as it does this automatically."
 
   ([imeta k]
 
@@ -212,11 +245,13 @@
    
 (defn ns-sym
 
-  ""
+  "Shows how an unqualified symbol gets qualified in the context of [[?]].
+
+   CLJ only."
   
   [sym]
   
-  (if (namespace sym)
+  (if (qualified-symbol? sym)
     sym
     (or (some-> (ns-resolve 'clojure.core
                             sym)
@@ -225,13 +260,37 @@
                 (str sym))))))
 
 
-
-
 #?(:clj
    
 (defmacro ?
 
-  ""
+  "Captures how an imeta is created so that it can be turned into a [[memento]], thus become serializable.
+
+   Analyses the given form which is a function call, extracting the first item as a key, the rest as args,
+   and puts this information in the metadata after the form is evaled.
+
+   ```clojure
+   (? (range))
+
+   (= (meta *1)
+      {::key 'clojure.core/range})
+
+
+   (? (my-f 1 2 3))
+
+   (= (meta *1)
+      {::key  'my.namespace/my-f
+       ::args [1 2 3]})
+     
+   ```
+
+   The function symbol, if it is not already, gets qualified either to 'clojure.core if it is part of it,
+   or to the current namespace. Thus, function calls to other namespaces should always be qualified.
+   This behavior mathes what can be achieved in CLJS.
+
+   Uses [[snapshot]] under the hood.
+  
+   README documents how this capturing can be turned on a per-namespace basis."
 
   [[f-sym & args :as call]]
 

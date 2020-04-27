@@ -1,6 +1,8 @@
 (ns dvlopt.fdat.transit
 
-  ""
+  "Ser/de for Transit.
+  
+   See README for examples."
 
   {:author "Adam Helinski"}
 
@@ -11,12 +13,12 @@
 
 
 
-;;;;;;;;;;
+;;;;;;;;;; Transit handlers
 
 
 (defn handler-in
 
-  ""
+  "Must be merged with other `:handlers` (or used as is) for reads."
 
   ([]
 
@@ -45,7 +47,11 @@
 
 (defn writer-options
 
-  ""
+  "Provides `:handlers` for writes as well as a necessary `:transform` function."
+
+  ;; The Fn/MetaFn handlers will never be called since :transform effectively transforms annotated
+  ;; functions into Memento, but without those handlers, :transform would not be called in the first
+  ;; place.
 
   ([]
 

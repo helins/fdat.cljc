@@ -1,5 +1,7 @@
 (ns dvlopt.fdat.track-test
 
+  "Testing enabling and disabling of capturing in namespaces."
+
   {:author "Adam Helinski"}
 
   (:require [clojure.test      :as t]
@@ -8,7 +10,7 @@
 
 
 
-;;;;;;;;;;
+;;;;;;;;;; Assertions
 
 
 (t/deftest env-reset!
@@ -32,10 +34,4 @@
 
   (t/is (true? (fdat.track/enabled? 'wl-1)))
 
-  (t/is (false? (fdat.track/enabled? 'bl-1)))
-
-
-
-
-  )
-
+  (t/is (false? (fdat.track/enabled? 'bl-1))))

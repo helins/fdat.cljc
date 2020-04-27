@@ -1,6 +1,10 @@
 (ns dvlopt.fdat.nippy
 
-  ""
+  "Ser/de for Nippy.
+
+   Simply must be required.
+  
+   See README for examples."
 
   {:author "Adam Helinski"}
 
@@ -13,12 +17,15 @@
 
 
 
-;;;;;;;;;;
+;;;;;;;;;; Nippy extensions
 
 
 (extend-protocol nippy/IFreezable2
 
   IMeta
+
+    ;; This one is a bit tricky as it does not use public values.
+    ;; 25 is the byte header for metas.
 
     (-freeze-with-meta! [x ^DataOutput out]
       (if-some [memento (fdat/memento x)]

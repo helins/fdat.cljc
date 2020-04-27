@@ -1,5 +1,7 @@
 (ns dvlopt.fdat.transit-test
 
+  "Testing ser/de using Transit."
+
   {:author "Adam Helinski"}
 
   (:require [clojure.test        :as t]
@@ -18,7 +20,7 @@
 
 (defn serialize
 
-  ""
+  "Serializes using Transit."
 
   [x]
 
@@ -38,7 +40,7 @@
 
 (defn deserialize
 
-  ""
+  "Deserializes using Transit."
 
   [x]
 
@@ -52,7 +54,7 @@
 
 (defn recall-n
 
-  ""
+  "Ser/de `n` times."
 
   [imeta n]
 
@@ -64,7 +66,7 @@
 
 
 
-;;;;;;;;;;
+;;;;;;;;;; Assertions
 
 
 (t/deftest recall

@@ -1,8 +1,11 @@
 (ns dvlopt.fdat.track
 
-  ""
+  "Black listing and white listing of namespaces for capturing.
+  
+   Cf. README"
 
   {:author "Adam Helinski"}
+
   (:require [clojure.edn :as edn]
             [dvlopt.void :as void]))
 
@@ -14,7 +17,7 @@
 
 (def ^:private -*auth
 
-  ;;
+  ;; Global data. See [[clear!]] and [[env-reset!]].
 
   (atom nil))
         
@@ -23,7 +26,7 @@
 
 (defn auth
 
-  ""
+  "Retrieves the current state."
 
   []
 
@@ -32,9 +35,22 @@
 
 
 
+(defn clear!
+
+  "C"
+
+  []
+
+  (reset! -*auth
+          {:default true
+           :rules   {}}))
+
+
+
+
 (defn default!
 
-  ""
+  "Sets the :default value."
 
   [enabled?]
 
@@ -48,7 +64,7 @@
 
 (defn enabled?
 
-  ""
+  "Is `nspace` enabled for capturing?"
 
   [nspace]
 
@@ -65,14 +81,10 @@
 
 (defn- -read-prop
 
-  ;;
+  ;; Reads a system property, defaults to env otherwise.
 
   [^String prop]
 
-  (println :got (or (System/getProperty prop)
-                       (System/getenv (.replace prop
-                                                "."
-                                                "_"))))
   (edn/read-string (or (System/getProperty prop)
                        (System/getenv (.replace prop
                                                 "."
@@ -83,7 +95,7 @@
 
 (defn env-reset!
 
-  ""
+  "Resets to new rules following system properties and env."
 
   []
 
@@ -102,22 +114,10 @@
 
 
 
-(defn reset-auth!
-
-  ""
-
-  []
-
-  (reset! -*auth
-          {:default true
-           :rules   {}}))
-
-
-
-
 (defn rules!
 
-  ""
+  "Sets new rules. If `rule` is false, means the namespace must be black-listed, true means
+   white-listed. Nil means neither."
 
   [ns->rule]
 
@@ -132,7 +132,7 @@
 
 
 
-;;;;;;;;;;
+;;;;;;;;;; Crucial to do that before compiling any user code.
 
 
 (env-reset!)
