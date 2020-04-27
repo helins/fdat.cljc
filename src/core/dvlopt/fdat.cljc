@@ -4,8 +4,9 @@
 
   {:author "Adam Helinski"}
 
-  (:require [clojure.core.protocols :as clj.protocols]
-            [dvlopt.void            :as void]))
+  (:require         [clojure.edn       :as edn]
+            #?(:clj [dvlopt.fdat.track :as track])
+                    [dvlopt.void       :as void]))
 
 
 
@@ -61,6 +62,8 @@
 
 
 (def ^:private -appliers
+
+  ;;
 
   {0         (fn applier-n-0 [f]
                (fn apply-n-0 [_args]
@@ -126,56 +129,7 @@
 
 
 
-(def ^:private -*enabled
-
-  ;;
-
-  (atom {:all?       true
-         :namespaces {}}))
-        
-
-
-
-(defn ns-enabled?
-
-  ""
-
-  [nspace]
-
-  (let [enabled @-*enabled
-        status  (get (:namespaces enabled)
-                     nspace)]
-    (if (:all? enabled)
-      (not (false? status))
-      (true? status))))
-
-
-
-
-(defn ns-enable-all
-
-  ""
-
-  [enable?]
-
-  (swap! -*enabled
-         assoc
-         :all?
-         enable?))
-
-
-
-(defn ns-enable
-
-  ""
-
-  [ns->enabled?]
-
-  (swap! -*enabled
-         update
-         :namespaces
-         void/merge
-         ns->enabled?))
+;;;;;;;;;;
 
 
 
@@ -254,39 +208,43 @@
 
 
 
-#?(:clj (defn ns-sym
+#?(:clj
+   
+(defn ns-sym
 
-          ""
-     
-          [sym]
-     
-          (if (namespace sym)
-            sym
-            (or (some-> (ns-resolve 'clojure.core
-                                    sym)
-                        symbol)
-                (symbol (str *ns*)
-                        (str sym))))))
+  ""
+  
+  [sym]
+  
+  (if (namespace sym)
+    sym
+    (or (some-> (ns-resolve 'clojure.core
+                            sym)
+                symbol)
+        (symbol (str *ns*)
+                (str sym))))))
 
 
 
 
-#?(:clj (defmacro ?
+#?(:clj
+   
+(defmacro ?
 
-          ""
+  ""
 
-          [[f-sym & args :as call]]
+  [[f-sym & args :as call]]
 
-          (let [f-sym-2 (if (symbol? f-sym)
-                          (ns-sym f-sym)
-                          (throw (IllegalArgumentException. (str "Function name must be symbol: " f-sym))))]
-            (if (ns-enabled? (symbol (namespace f-sym-2)))
-              (let [args-2 (take (count args)
-                                 (repeatedly gensym))]
-                `(let ~(vec (interleave args-2
-                                       args))
-                   (snapshot ~(list* f-sym-2
-                                     args-2)
-                             '~f-sym-2
-                             (vector ~@args-2))))
-              call))))
+  (let [f-sym-2 (if (symbol? f-sym)
+                  (ns-sym f-sym)
+                  (throw (IllegalArgumentException. (str "Function name must be symbol: " f-sym))))]
+    (if (track/enabled? (symbol (namespace f-sym-2)))
+      (let [args-2 (take (count args)
+                         (repeatedly gensym))]
+        `(let ~(vec (interleave args-2
+                               args))
+           (snapshot ~(list* f-sym-2
+                             args-2)
+                     '~f-sym-2
+                     (vector ~@args-2))))
+      call))))

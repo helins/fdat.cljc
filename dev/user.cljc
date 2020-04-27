@@ -9,6 +9,7 @@
             [clojure.test             :as t]
             [dvlopt.fdat              :as fdat]
             [dvlopt.fdat.nippy        :as fdat.nippy]
+            [dvlopt.fdat.track        :as fdat.track]
             [dvlopt.fdat.transit      :as fdat.transit]
             [dvlopt.fdat-test         :as fdat-test]
             [dvlopt.fdat.nippy-test   :as fdat.nippy-test]

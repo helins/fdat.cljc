@@ -131,8 +131,3 @@
                  (recall-n sq
                             10)))
         "Rebuilding an infinite sequence"))
-
-
-
-
-
