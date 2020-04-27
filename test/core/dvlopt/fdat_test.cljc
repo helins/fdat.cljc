@@ -47,8 +47,8 @@
 
 
 (fdat/register {'clojure.core/range  range
-                `mult                mult
-                `pre-inc             pre-inc})
+                `mult                [1 mult]
+                `pre-inc             [1 pre-inc]})
 
 
 

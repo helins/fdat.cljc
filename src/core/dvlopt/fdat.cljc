@@ -47,15 +47,51 @@
 
 
 
-(defn- -register
+(defn- -variadic-applier
 
   ;;
 
-  [registry k f]
+  [f]
 
-  (void/assoc-strict registry
-                     k
-                     f))
+  (fn variadic-applier [args]
+    (apply f
+           args)))
+
+
+
+
+(def ^:private -appliers
+
+  {0         (fn applier-n-0 [f]
+               (fn apply-n-0 [_args]
+                 (f)))
+   1         (fn applier-n-1 [f]
+               (fn apply-n-1 [[a]]
+                 (f a)))
+   2         (fn applier-n-2 [f]
+               (fn apply-n-2 [[a b]]
+                 (f a b)))
+   3         (fn applier-n-3 [f]
+               (fn apply-n-3 [[a b c]]
+                 (f a b c)))
+   4         (fn applier-n-4 [f]
+               (fn apply-n-4 [[a b c d]]
+                 (f a b c d)))
+   5         (fn applier-n-5 [f]
+               (fn apply-n-5 [[a b c d e]]
+                 (f a b c d e)))
+   6         (fn applier-n-6 [f]
+               (fn apply-n-6 [[a b c d e f]]
+                 (f a b c d e f)))
+   7         (fn applier-n-7 [f]
+               (fn apply-n-7 [[a b c d e f g]]
+                 (f a b c d e f g)))
+   8         (fn applier-n-8 [f]
+               (fn apply-n-8 [[a b c d e f g h]]
+                 (f a b c d e f g h)))
+   :no-apply (fn not-applier [f]
+               (fn no-apply[_args]
+                 f))})
 
 
 
@@ -64,21 +100,28 @@
 
   ""
 
-  ([hmap]
+  ([k->f]
 
    (swap! -*registry
-          (fn register-kv [registry]
-            (reduce-kv -register
-                       registry
-                       hmap))))
+          register
+          k->f))
 
 
-  ([k f]
+  ([registry k->f]
 
-   (swap! -*registry
-          void/assoc-strict
-          k
-          f)))
+   (reduce-kv (fn update-ks [registry-2 k f]
+                (if f
+                  (assoc registry-2
+                         k
+                         (if (fn? f)
+                           (-variadic-applier f)
+                           ((get -appliers
+                                 (first f)
+                                 -variadic-applier) (second f))))
+                  (dissoc registry-2
+                          k)))
+              registry
+              k->f)))
 
 
 
@@ -175,13 +218,11 @@
          k    (::k mta)
          f    (or (registry k)
                   (throw (ex-info (str "Key not found to rebuild from data: " k)
-                                  {::args     args
-                                   ::k        k
-                                   ::registry registry})))]
-     (vary-meta (if (seq args)
-                  (apply f
-                         args)
-                  (f))
+                                  (void/assoc {::k        k
+                                               ::registry registry}
+                                              ::args
+                                              args))))]
+     (vary-meta (f args)
                 merge
                 mta))))
 
