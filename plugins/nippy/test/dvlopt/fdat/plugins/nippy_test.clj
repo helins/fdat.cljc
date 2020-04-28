@@ -58,6 +58,8 @@
 
 (t/deftest build
 
+  (fdat.nippy/init)
+
   (t/is (= 12
            (fdat-test/f 3)
            (f-recalled 3)

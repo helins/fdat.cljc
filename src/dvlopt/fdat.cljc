@@ -285,6 +285,8 @@
 
 
 
+;; So that Kaocha does not complain when testing for CLJS.
+;;
 #?(:clj
    
 (defmacro ?
