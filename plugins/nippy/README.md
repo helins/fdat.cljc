@@ -1,7 +1,7 @@
 # FDat.plugins.nippy
 
 [![Clojars
-Project](https://img.shields.io/clojars/v/dvlopt/fdat.cljc.svg)](https://clojars.org/dvlopt/fdat.cljc)
+Project](https://img.shields.io/clojars/v/dvlopt/fdat.svg)](https://clojars.org/dvlopt/fdat)
 
 [![Clojars
 Project](https://img.shields.io/clojars/v/dvlopt/fdat.plugins.nippy.svg)](https://clojars.org/dvlopt/fdat.plugins.nippy)

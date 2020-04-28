@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>dvlopt</groupId>
   <artifactId>fdat.plugins.transit</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.0.0-beta0</version>
   <name>fdat</name>
   <description>Transit plugin for dvlopt/fdat</description>
   <url>https://github.com/dvlopt/fdat.cljc</url>
@@ -15,7 +15,7 @@
   </licenses>
   <developers>
     <developer>
-      <name>Adam</name>
+      <name>Adam Helinski</name>
     </developer>
   </developers>
   <scm>
