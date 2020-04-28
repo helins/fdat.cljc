@@ -103,7 +103,7 @@ like this:
                'clojure.core/range)
 
 (fdat/snapshot (random-range 1000000000)
-               'user/range-range
+               'user/random-range
                [1000000000])
 ```
 
@@ -124,7 +124,7 @@ behavior matches what is allowed by Clojurescript. This means that calling
 functions from other namespaces should always be qualified (it is good practise
 anyway).
 
-A key can be provided explicitely. It must be namespaced.
+A key can be provided explicitly. It must be namespaced.
 
 ```clojure
 (fdat/? :some.namespace/keyword-key
@@ -140,7 +140,7 @@ how to recreate the original `IMeta`s.
 ;; We add to the global registry what we need. We do it once and for all.
 ;;
 ;; `range`         is variadic.
-;; `random-range`  takes one argument, mentionning it explicitely is an optimization.
+;; `random-range`  takes one argument, mentionning it explicitly is an optimization.
 
 (fdat/register {'clojure.core.range range
                 'user/random-range  [1 random-range]})
@@ -166,7 +166,7 @@ involves writing a program twice: the functions and all the translation between
 those functions and their data representations. It does not feel too smart.
 
 Second, what is supposed to be a mere function call turns into vector
-destructing and manipulation, if only but to access arguments.
+destructuring and manipulation, if only but to access arguments.
 
 Third, all those vector manipulations really slow down our programs. We want to
 pay the cost of serialization only at serialization, while things run as usual
@@ -240,14 +240,14 @@ In the unlikely event that Nippy or Transit are not enough, one can adapt this
 scheme to another serializer (and contribute it here). One would study how these
 plugins are written.
 
-The following steps might look slightly counterintuive. Indeed, it was tricky to
+The following steps might look slightly counterintuitive. Indeed, it was tricky to
 develop a way that would potentially work for any serializer, either from
 Clojure or Clojurescript.
 
 In short, serializers typically deals in concrete types. One must find a way to
 modify how `clojure.lang.IMetas` are handled. Specifically, they should be turned
 into a `dvlopt.fdat.Memento` by using the `dvlopt.fdat/memento` function which
-either returns a Memento if it finds at least a `::fdat/k` in the medata, or
+either returns a Memento if it finds at least a `::fdat/k` in the metadata, or
 nothing, meaning that the `IMeta` should be processed as usual.
 
 Then, one must extend how a `Memento` itself is serialized. It should simply
