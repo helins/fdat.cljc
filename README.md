@@ -103,7 +103,21 @@ This is tedious and intrusive. Fortunately, the `fdat/?` macro does it for us
 while taking care that arguments are evaled only once:
 
 ```clojure
-(fdat/? (range (fdat/? (rand-int 1000000)))))
+(fdat/? (random-range 1000000000))
+```
+
+The symbol of the function is extracted as the key. Because a key should be
+qualified, it is resolved by either namespacing it to `'clojure.core` if it is
+indeed part of the standard library, or the current namespace otherwise. This
+behavior matches what is allowed by Clojurescript. This means that calling
+functions from other namespaces should always be qualified (it if good practise
+anyway).
+
+A key can be provided explicitely. It must be namespaced.
+
+```clojure
+(fdat/? :some.namespace/keyword-key
+        (random-range 1000000000))
 ```
 
 ## Recalling how to build an IMeta from its former metadata
