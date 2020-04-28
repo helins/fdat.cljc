@@ -4,8 +4,10 @@
 
   {:author "Adam Helinski"}
 
-  (:require [clojure.test :as t]
-            [dvlopt.fdat  :as fdat])
+  (:require [clojure.test         :as    t]
+            [dvlopt.fdat          :as    fdat]
+            [dvlopt.fdat.external :as    fdat.external
+                                  :refer [mult-referred]])
   #?(:cljs (:require-macros [dvlopt.fdat])))
 
 
@@ -84,9 +86,11 @@
 
 ;; Adding those functions to the global registry.
 
-(fdat/register {'clojure.core/range  range
-                ::mult               [1 mult]
-                `pre-inc             [1 pre-inc]})
+(fdat/register {'clojure.core/range          range
+                `fdat.external/mult-referred mult-referred
+                `fdat.external/pre-inc       fdat.external/pre-inc
+                ::mult                       [1 mult]
+                `pre-inc                     [1 pre-inc]})
 
 
 
@@ -132,7 +136,12 @@
            (f 3)
            (f-recalled 3)
            ((recall-n f
-                      10) 3))
+                      10) 3)
+           ((-> (fdat/? (fdat.external/pre-inc (fdat/? (mult-referred 3))))
+                fdat/memento
+                :snapshot
+                fdat/recall)
+            3))
         "Rebuilding a function")
 
   (t/is (= (take 100

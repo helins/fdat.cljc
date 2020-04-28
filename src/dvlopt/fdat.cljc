@@ -7,17 +7,10 @@
 
   {:author "Adam Helinski"}
 
-  (:require         [clojure.edn       :as edn]
+  (:require         [cljs.analyzer.api]
+                    [clojure.edn       :as edn]
             #?(:clj [dvlopt.fdat.track :as track])
                     [dvlopt.void       :as void]))
-
-
-
-
-;;;;;;;;;; Gathering declarations
-
-
-(declare ^:private -afy-imeta)
 
 
 
@@ -243,22 +236,23 @@
 
 
 #?(:clj
-   
-(defn ns-sym
 
-  "Shows how an unqualified symbol gets qualified in the context of [[?]].
+;; Hack adapted from `taoensso.encore/compiling-cljs?`.
+;; Depending on whether we are compiling for CLJ or CLJS, symbols get resolved differently.
 
-   CLJ only."
-  
-  [sym]
-  
-  (if (qualified-symbol? sym)
-    sym
-    (or (some-> (ns-resolve 'clojure.core
-                            sym)
-                symbol)
-        (symbol (str *ns*)
-                (str sym))))))
+(if (some-> (find-ns 'cljs.analyzer)
+            (ns-resolve '*cljs-file*)
+            deref)
+  (defn- -resolve-sym [env sym]
+    (let [sym-2 (:name (cljs.analyzer.api/resolve env
+                                                  sym))]
+      (if (= (namespace sym-2)
+             "cljs.core")
+        (symbol "clojure.core"
+                (name sym-2))
+        sym-2)))
+  (defn- -resolve-sym [_env sym]
+    (symbol (resolve sym)))))
 
 
 
@@ -267,7 +261,7 @@
 
 (defn- -?
 
-  ;; Used bu [[?]].
+  ;; Used by [[?]].
 
   [k f-sym args call]
 
@@ -330,7 +324,8 @@
   ([[f-sym & args :as call]]
  
    (-? (if (symbol? f-sym)
-         (ns-sym f-sym)
+         (-resolve-sym &env
+                       f-sym)
          (throw (IllegalArgumentException. (str "Function name must be symbol: " f-sym))))
        f-sym
        args
