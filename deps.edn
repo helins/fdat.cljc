@@ -2,11 +2,11 @@
  {dvlopt/void         {:mvn/version "1.0.1"}
   org.clojure/clojure {:mvn/version "1.10.1"}}
 
- :aliases
- {:core
-  {:extra-paths ["src/core"]}
+ :paths
+ ["src"]
 
-  :deploy
+ :aliases
+ {:deploy
   {:extra-deps {deps-deploy {:mvn/version "0.0.9"}}
    :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy" "fdat.jar"]}
 
@@ -22,25 +22,14 @@
   {:extra-deps {seancorfield/depstar {:mvn/version "0.5.2"}}
    :main-opts  ["-m" "hf.depstar.jar" "fdat.jar"]}
 
-  :nippy
-  {:extra-deps  {com.taoensso/nippy {:mvn/version "2.14.0"}}
-   :extra-paths ["src/nippy"]}
-
   :test
-  {:extra-deps  {com.cognitect/transit-clj  {:mvn/version "1.0.324"}
+  {:extra-deps  {com.taoensso/nippy         {:mvn/version "2.14.0"}
+                 com.cognitect/transit-clj  {:mvn/version "1.0.324"}
                  com.cognitect/transit-cljs {:mvn/version "0.8.256"}
-                 com.taoensso/nippy         {:mvn/version "2.14.0"}
                  lambdaisland/kaocha        {:mvn/version "1.0-612"}
                  lambdaisland/kaocha-cljs   {:mvn/version "0.0-71"}}
-   :extra-paths ["src/core"
-                 "src/nippy"
-                 "src/transit"
-                 "test/core"
-                 "test/nippy"
-                 "test/transit"
-                 ]}
-
-  :transit
-  {:extra-deps {com.cognitect/transit-clj  {:mvn/version "1.0.324"}
-                com.cognitect/transit-cljs {:mvn/version "0.8.256"}}
-   :extra-path ["src/transit"]}}}
+   :extra-paths ["plugins/nippy/src"
+                 "plugins/nippy/test"
+                 "plugins/transit/src"
+                 "plugins/transit/test"
+                 "test"]}}}

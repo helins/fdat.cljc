@@ -1,14 +1,14 @@
-(ns dvlopt.fdat.nippy-test
+(ns dvlopt.fdat.plugins.nippy-test
 
   "Testing ser/de using Nippy."
 
   {:author "Adam Helinski"}
 
-  (:require [clojure.test      :as t]
-            [dvlopt.fdat       :as fdat]
-            [dvlopt.fdat.nippy :as fdat.nippy]
-            [dvlopt.fdat-test  :as fdat-test]
-            [taoensso.nippy    :as nippy]))
+  (:require [clojure.test              :as t]
+            [dvlopt.fdat               :as fdat]
+            [dvlopt.fdat.plugins.nippy :as fdat.nippy]
+            [dvlopt.fdat-test          :as fdat-test]
+            [taoensso.nippy            :as nippy]))
 
 
 

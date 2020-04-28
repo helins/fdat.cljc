@@ -1,4 +1,4 @@
-(ns dvlopt.fdat.nippy
+(ns dvlopt.fdat.plugins.nippy
 
   "Ser/de for Nippy.
 

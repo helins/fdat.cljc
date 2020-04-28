@@ -1,4 +1,4 @@
-(ns dvlopt.fdat.transit
+(ns dvlopt.fdat.plugins.transit
 
   "Ser/de for Transit.
   

@@ -4,7 +4,7 @@
 /checkouts
 *.jar
 *.class
-/.cpcache
+.cpcache
 /.lein-*
 /.nrepl-history
 /.nrepl-port

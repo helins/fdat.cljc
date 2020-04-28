@@ -1,14 +1,14 @@
-(ns dvlopt.fdat.transit-test
+(ns dvlopt.fdat.plugins.transit-test
 
   "Testing ser/de using Transit."
 
   {:author "Adam Helinski"}
 
-  (:require [clojure.test        :as t]
-            [cognitect.transit   :as transit]
-            [dvlopt.fdat         :as fdat]
-            [dvlopt.fdat.transit :as fdat.transit]
-            [dvlopt.fdat-test    :as fdat-test])
+  (:require [clojure.test                :as t]
+            [cognitect.transit           :as transit]
+            [dvlopt.fdat                 :as fdat]
+            [dvlopt.fdat.plugins.transit :as fdat.transit]
+            [dvlopt.fdat-test            :as fdat-test])
   #?(:clj (:import (java.io ByteArrayInputStream
                             ByteArrayOutputStream))))
 
