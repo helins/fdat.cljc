@@ -6,7 +6,7 @@
 
   (:require [clojure.test              :as t]
             [dvlopt.fdat               :as fdat]
-            [dvlopt.fdat.plugins.nippy :as fdat.nippy]
+            [dvlopt.fdat.plugins.nippy :as fdat.plugins.nippy]
             [dvlopt.fdat-test          :as fdat-test]
             [taoensso.nippy            :as nippy]))
 
@@ -31,6 +31,8 @@
 
 
 ;;;;;;;;;; Used tests tests, also useful for dev
+
+(fdat.plugins.nippy/init)
 
 
 (def f-data
@@ -57,8 +59,6 @@
 
 
 (t/deftest build
-
-  (fdat.nippy/init)
 
   (t/is (= 12
            (fdat-test/f 3)

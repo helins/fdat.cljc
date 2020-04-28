@@ -26,7 +26,7 @@
 
   ([]
 
-   (init registry))
+   (init fdat/registry))
 
 
   ([registry]

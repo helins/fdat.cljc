@@ -4,9 +4,8 @@
 
   {:author "Adam Helinski"}
 
-  (:require [clojure.test      :as t]
-            [cognitect.transit :as transit]
-            [dvlopt.fdat       :as fdat])
+  (:require [clojure.test :as t]
+            [dvlopt.fdat  :as fdat])
   #?(:cljs (:require-macros [dvlopt.fdat])))
 
 

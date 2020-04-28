@@ -30,6 +30,11 @@
       <artifactId>clojure</artifactId>
       <version>1.10.1</version>
     </dependency>
+    <dependency>
+        <groupId>dvlopt</groupId>
+        <artifactId>void</artifactId>
+        <version>1.0.1</version>
+    </dependency>
   </dependencies>
   <build>
     <sourceDirectory>src</sourceDirectory>

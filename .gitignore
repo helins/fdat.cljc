@@ -17,5 +17,4 @@
 .cljs_node_repl/
 node_modules/
 package-lock.json
-tests.edn
 out

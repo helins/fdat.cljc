@@ -1,24 +1,30 @@
 # FDat
 
 [![Clojars
-Project](https://img.shields.io/clojars/v/dvlopt/fdat.svg)](https://clojars.org/dvlopt/fdat.cljc)
+Project](https://img.shields.io/clojars/v/dvlopt/fdat.cljc.svg)](https://clojars.org/dvlopt/fdat.cljc)
 
 [![cljdoc badge](https://cljdoc.org/badge/dvlopt/fdat)](https://cljdoc.org/d/dvlopt/fdat.cljc)
 
 Compatible with Clojurescript.
 
-Plugins for [Nippy](https://github.com/ptaoussanis/nippy) and
-[Transit](https://github.com/cognitect/transit-clj).
+"FDat" stands for "Functions as Data", although there is another mnemonic device
+for remembering the name of the library.
 
 Wouldn't it be nice to be able to serialize functions or infinite sequences?
 Persist them to a file or sending them over the network without a flinch?
 Sending events that actually look like events, like functions, instead of
 translating them manually to some inconvenient data representation?
 
+This is what this library strives to provide, automatic serialization and
+deserialization of functions and all `IMeta`s for that matter, which notably
+include sequences. More precisely, instead of serializing code, we serialize
+information about how an `IMeta`  has been created, and deserialization is taking
+that information and knowing how to recreate the original `IMeta`.
+
 ```clojure
 ;; For instance, using Nippy.
 
-;; Impossible.
+;; Impossible, the sequence is infinite.
 
 (-> (range)
     nippy/freeze)
@@ -34,7 +40,7 @@ translating them manually to some inconvenient data representation?
     nippy/freeze)
 
 
-;; Forget about it.
+;; Does not work.
 
 (-> my-function
     nippy/freeze)
@@ -48,42 +54,47 @@ translating them manually to some inconvenient data representation?
 
 
 ;; Serializing the idea of a random range.
+;; Pretty much instantaneous.
 
 (-> (fdat/? (random-range 1000000000))
     nippy/freeze)
 
 
-;;  Serializing our random range exactly as it is.
+;; In contrast, serializing our random range exactly as it is.
+;; Takes a long time.
 
 (-> (random-range 1000000000)
     nippy/freeze)
 ```
 
-Code is data, this axiom holds true until one has to serialize functions. Things
-get even more complicated when code needs to be shared between processes running
-in different environments, such as between Clojure and Clojurescript.
-
-Instead of trying to literaly share code (eg. sending jars over the network),
-this library provides a barely intrusive way for annotating IMetas such as
-functions or sequences (functions in disguise) in order to track how they can be
-rebuilt. Serializers like Nippy or Transit can then automatically use that
-information.
+Code is data, this axiom holds true until one has to serialize functions, for
+instance for sending an event to another process. Things get even more
+complicated when code needs to be shared between processes running in different
+environments, such as between Clojure and Clojurescript. We shall see in a
+moment that the current usual way of doing it is needlessly cumbersome.
 
 # Usage
 
 ## Supported serializers
 
-One can use either Nippy or Transit by requiring one of the plugins. And
-everything is taken care of. No matter where those functions/sequences/IMetas
-are in the data we serialize, they get handled automatically, both at
-serialization and deserialization.
+Currently, one can use either Nippy or Transit by requiring one of the plugins.
+And everything is taken care of. No matter where those
+functions/sequences/IMetas are in the data we serialize, they get handled
+automatically, both at serialization and deserialization. We can now serialize
+entire programs if we want to.
+
+For the [Nippy plugin, go here](./plugins/nippy).
+
+For the [Transit plugin, go here](./plugins/transit).
+
+But first, the following few sections explain how the magic works.
 
 ## Automatically annotating IMetas using the `?` macro
 
 Annotating means keeping track of a key and (if needed) arguments. The key
 refers to a function kept in a registry that we can use to rebuild our original
 IMeta when providing (if needed) the original arguments. Manually, it looks
-like:
+like this:
 
 ```clojure
 (require '[dvlopt.fdat :as fdat])
@@ -110,7 +121,7 @@ The symbol of the function is extracted as the key. Because a key should be
 qualified, it is resolved by either namespacing it to `'clojure.core` if it is
 indeed part of the standard library, or the current namespace otherwise. This
 behavior matches what is allowed by Clojurescript. This means that calling
-functions from other namespaces should always be qualified (it if good practise
+functions from other namespaces should always be qualified (it is good practise
 anyway).
 
 A key can be provided explicitely. It must be namespaced.
@@ -122,8 +133,8 @@ A key can be provided explicitely. It must be namespaced.
 
 ## Recalling how to build an IMeta from its former metadata
 
-That was all for annotations. The second part is being able to recall how to
-recreate the original IMetas.
+That was all for annotations. The second and last part is being able to recall
+how to recreate the original `IMeta`s.
 
 ```clojure
 ;; We add to the global registry what we need. We do it once and for all.
@@ -134,6 +145,9 @@ recreate the original IMetas.
 (fdat/register {'clojure.core.range range
                 'user/random-range  [1 random-range]})
 ```
+
+Given this registry, a serializer now has a way to rebuilt an `IMeta` with a key
+and arguments.
 
 
 ## As a better alternative to event vectors
@@ -220,9 +234,9 @@ env fdat_track_default=false  my_command ...
 At runtime, in Clojure only, one can dynamically do the same using the
 `dvlopt.fdat.track` namespace.
 
-# Adapting for a serializer
+# Adapting for a new serializer
 
-In the unlikely event that Nippy or Transit is not enough, one can adapt this
+In the unlikely event that Nippy or Transit are not enough, one can adapt this
 scheme to another serializer (and contribute it here). One would study how these
 plugins are written.
 
@@ -236,13 +250,42 @@ into a `dvlopt.fdat.Memento` by using the `dvlopt.fdat/memento` function which
 either returns a Memento if it finds at least a `::fdat/k` in the medata, or
 nothing, meaning that the `IMeta` should be processed as usual.
 
-Then, one must extend how a `Memento` is serialized. It should simply extract
-`:snapshot` from it, which is the original metadata map of the `IMeta`, which
-contains at least our beloved `::fdat/k` and `::fdat/args`, and pass it on to be
-serialized as a regular map.
+Then, one must extend how a `Memento` itself is serialized. It should simply
+extract `:snapshot` from it, which is the original metadata map of the `IMeta`,
+which contains at least our beloved `::fdat/k` and `::fdat/args`, and pass it on
+to be serialized as a regular map.
 
-For unpacking, the only step is to extend how a `Memento` is deserialized by
-calling the `dvlopt.fdat/recall` on the metadata map.
+For unpacking, the only step is to extend how a `Memento` is deserialized. The
+`dvlopt.fdat/recall` function must be called providing the retrieved metadata as
+argument.
+
+## Run tests
+
+Run all tests (JVM and JS based ones):
+
+```bash
+$ ./bin/kaocha
+```
+
+For Clojure only:
+
+```bash
+$ ./bin/kaocha jvm
+```
+
+For Clojurescript on NodeJS, `ws` must be installed:
+```bash
+$ npm i ws
+```
+Then:
+```
+$ ./bin/kaocha node
+```
+
+For Clojurescript in the browser (which might need to be already running):
+```bash
+$ ./bin/kaocha browser
+```
 
 ## License
 

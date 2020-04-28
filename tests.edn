@@ -1,0 +1,16 @@
+#kaocha/v1
+{:tests [{:id :jvm
+          :test-paths ["test"
+                       "plugins/nippy/test"
+                       "plugins/transit/test"]}
+         {:id         :node
+          :test-paths ["test"
+                       "plugins/nippy/test"
+                       "plugins/transit/test"]
+          :type       :kaocha.type/cljs}
+         {:id            :browser
+          :test-paths    ["test"
+                          "plugins/nippy/test"
+                          "plugins/transit/test"]
+          :type          :kaocha.type/cljs
+          :cljs/repl-env cljs.repl.browser/repl-env}]}

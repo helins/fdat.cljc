@@ -7,7 +7,7 @@
   (:require [clojure.test                :as t]
             [cognitect.transit           :as transit]
             [dvlopt.fdat                 :as fdat]
-            [dvlopt.fdat.plugins.transit :as fdat.transit]
+            [dvlopt.fdat.plugins.transit :as fdat.plugins.transit]
             [dvlopt.fdat-test            :as fdat-test])
   #?(:clj (:import (java.io ByteArrayInputStream
                             ByteArrayOutputStream))))
@@ -24,7 +24,7 @@
 
   [x]
 
-  (let [options (fdat.transit/writer-options)]
+  (let [options (fdat.plugins.transit/writer-options)]
     #?(:clj  (let [out (ByteArrayOutputStream. 512)]
                (transit/write (transit/writer out
                                               :json
@@ -46,7 +46,7 @@
 
   (transit/read (transit/reader #?(:clj (ByteArrayInputStream. (.toByteArray x)))
                                 :json
-                                {:handlers (fdat.transit/handler-in)})
+                                {:handlers (fdat.plugins.transit/handler-in)})
                 #?(:cljs x)))
 
 
