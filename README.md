@@ -17,14 +17,20 @@ translating them manually to some inconvenient data representation?
 
 This is what this library strives to provide, automatic serialization and
 deserialization of functions and all `IMeta`s for that matter, which notably
-include sequences. More precisely, instead of serializing code, we serialize
-information about how an `IMeta`  has been created, and deserialization is taking
-that information and knowing how to recreate the original `IMeta`.
+include sequences (functions in disguise). More precisely, instead of
+serializing code, we serialize information about how an `IMeta`  has been
+created, and deserialization is taking that information and knowing how to
+recreate the original `IMeta`.
+
+This library does not do the serialization itself. Rather, plugins are provided
+for commonly used ones. As described below, currently,
+[Nippy](https://github.com/ptaoussanis/nippy) and
+[Transit](https://github.com/cognitect/transit-clj).
 
 ```clojure
 ;; For instance, using Nippy.
 
-;; Impossible, the sequence is infinite.
+;; Normally, impossible, the sequence is infinite.
 
 (-> (range)
     nippy/freeze)
@@ -70,8 +76,8 @@ that information and knowing how to recreate the original `IMeta`.
 Code is data, this axiom holds true until one has to serialize functions, for
 instance for sending an event to another process. Things get even more
 complicated when code needs to be shared between processes running in different
-environments, such as between Clojure and Clojurescript. We shall see in a
-moment that the current usual way of doing it is needlessly cumbersome.
+environments, such as between Clojure and Clojurescript. We shall see how we can
+surmount those obstacles.
 
 # Usage
 
@@ -81,13 +87,15 @@ Currently, one can use either Nippy or Transit by requiring one of the plugins.
 And everything is taken care of. No matter where those
 functions/sequences/IMetas are in the data we serialize, they get handled
 automatically, both at serialization and deserialization. We can now serialize
-entire programs if we want to.
+entire programs if we want to. Plugin examples just show how to do the setup.
 
 For the [Nippy plugin, go here](./plugins/nippy).
 
 For the [Transit plugin, go here](./plugins/transit).
 
-But first, the following few sections explain how the magic works.
+But first, the following few sections explain how the magic works. The user is
+in charge of two things. First, using the `fdat/?` macro when an IMeta such as a
+function needs to be serializable. Second, just once, keeping a registry.
 
 ## Automatically annotating IMetas using the `?` macro
 
@@ -105,6 +113,10 @@ like this:
 (fdat/snapshot (random-range 1000000000)
                'user/random-range
                [1000000000])
+
+(meta *1
+      {::fdat/k    'user/random-range
+       ::fdat/args [1000000000]})
 ```
 
 Doing so, we attach an `::fdat/k` and `::fdat/args` to the metadata of the first
@@ -114,22 +126,25 @@ This is tedious and intrusive. Fortunately, the `fdat/?` macro does it for us
 while taking care that arguments are evaled only once:
 
 ```clojure
+;; Results in the same metadata annotation, but a lot more minimalistic.
+
 (fdat/? (random-range 1000000000))
 ```
 
 The symbol of the function is extracted as the key. Because a key should be
-qualified, it is resolved by either namespacing it to `'clojure.core` if it is
-indeed part of the standard library, or the current namespace otherwise. This
-behavior matches what is allowed by Clojurescript. This means that calling
-functions from other namespaces should always be qualified (it is good practise
-anyway).
+qualified, it is resolved automatically (eg. `random-range` becomes
+`user/random-range`).
 
-A key can be provided explicitly. It must be namespaced.
+A key can be provided explicitly, although this would be less often needed. When
+provided explicitly, it can be a keyword, but qualified nonetheless.
 
 ```clojure
 (fdat/? :some.namespace/keyword-key
         (random-range 1000000000))
 ```
+
+An additional property is those functions become transparent for developping and
+debugging, one can simply have a look at the metadata.
 
 ## Recalling how to build an IMeta from its former metadata
 
@@ -170,7 +185,7 @@ destructuring and manipulation, if only but to access arguments.
 
 Third, all those vector manipulations really slow down our programs. We want to
 pay the cost of serialization only at serialization, while things run as usual
-otherwise.
+the rest of the time.
 
 Lastly, we want to be able to turn off automatic annotation (the `fdat/?`
 macro), either entirely or for given namespaces. That means that we can add
@@ -204,7 +219,7 @@ behavior. For instance, returning nil instead of throwing:
 We can control annotations by `fdat/?` at compile time (and at runtime for
 Clojure but not Clojurescript). Pay only for what you use. A library can be
 prepared for serialization, and if the user does not need it, annotation can be
-disabled so that there is no overhead.
+disabled so that there is no overhead what so ever.
 
 For compilation (either Clojure or Clojurescript), one can provide the following
 `-D` properties in `deps.edn` or, if using Shadow-CLJS for Clojurescript, in
@@ -238,7 +253,7 @@ At runtime, in Clojure only, one can dynamically do the same using the
 
 In the unlikely event that Nippy or Transit are not enough, one can adapt this
 scheme to another serializer (and contribute it here). One would study how these
-plugins are written.
+plugins are written in the first place.
 
 The following steps might look slightly counterintuitive. Indeed, it was tricky to
 develop a way that would potentially work for any serializer, either from
