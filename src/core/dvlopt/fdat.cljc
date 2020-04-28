@@ -260,6 +260,30 @@
                 (str sym))))))
 
 
+
+
+#?(:clj
+
+(defn- -?
+
+  ;;
+
+  [k f-sym args call]
+
+  (if (track/enabled? (symbol (namespace k)))
+    (let [args-2 (take (count args)
+                       (repeatedly gensym))]
+      `(let ~(vec (interleave args-2
+                             args))
+         (snapshot ~(list* f-sym
+                           args-2)
+                   '~k
+                   (vector ~@args-2))))
+    call)))
+
+
+
+
 #?(:clj
    
 (defmacro ?
@@ -280,30 +304,38 @@
 
    (= (meta *1)
       {::key  'my.namespace/my-f
-       ::args [1 2 3]})
-     
+       ::args [1 2 3]})     
+   ```
+
+   Providing a key explicitly:
+
+   ```clojure
+   (? ::my-key
+      (my-f 1 2 3))
    ```
 
    The function symbol, if it is not already, gets qualified either to 'clojure.core if it is part of it,
    or to the current namespace. Thus, function calls to other namespaces should always be qualified.
    This behavior mathes what can be achieved in CLJS.
 
+   When supplied explicitely, a key is used as is. A key must be a qualified symbol or qualified keyword.
+
    Uses [[snapshot]] under the hood.
   
    README documents how this capturing can be turned on a per-namespace basis."
 
-  [[f-sym & args :as call]]
+  ([[f-sym & args :as call]]
+ 
+   (-? (if (symbol? f-sym)
+         (ns-sym f-sym)
+         (throw (IllegalArgumentException. (str "Function name must be symbol: " f-sym))))
+       f-sym
+       args
+       call))
 
-  (let [f-sym-2 (if (symbol? f-sym)
-                  (ns-sym f-sym)
-                  (throw (IllegalArgumentException. (str "Function name must be symbol: " f-sym))))]
-    (if (track/enabled? (symbol (namespace f-sym-2)))
-      (let [args-2 (take (count args)
-                         (repeatedly gensym))]
-        `(let ~(vec (interleave args-2
-                               args))
-           (snapshot ~(list* f-sym-2
-                             args-2)
-                     '~f-sym-2
-                     (vector ~@args-2))))
-      call))))
+  ([k [f-sym & args :as call]]
+
+   (-? k
+       f-sym
+       args
+       call))))

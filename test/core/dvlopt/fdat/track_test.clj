@@ -22,16 +22,20 @@
   (System/setProperty "fdat.track.white-list"
                       "[wl-1,wl-2]")
 
-  (fdat.track/env-reset!)
-
-  (t/is (= {:default false
-            :rules   {'bl-1 false
-                      'bl-2 false
-                      'wl-1 true
-                      'wl-2 true}}
-           (fdat.track/auth))
-        "Reading rules from env or system properties")
-
-  (t/is (true? (fdat.track/enabled? 'wl-1)))
-
-  (t/is (false? (fdat.track/enabled? 'bl-1))))
+  (let [auth (fdat.track/auth)]
+    (fdat.track/env-reset!)
+    (t/is (= {:default false
+              :rules   {'bl-1 false
+                        'bl-2 false
+                        'wl-1 true
+                        'wl-2 true}}
+             (fdat.track/auth))
+          "Reading rules from env or system properties")
+    (t/is (true? (fdat.track/enabled? 'wl-1)))
+    (t/is (false? (fdat.track/enabled? 'bl-1)))
+    (t/is (false? (fdat.track/enabled? 'else)))
+    (fdat.track/default! true)
+    (t/is (true? (fdat.track/enabled? 'else)))
+    (fdat.track/clear!)
+    (fdat.track/default! (:default auth))
+    (fdat.track/rules! (:rules auth))))

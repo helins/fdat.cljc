@@ -86,7 +86,7 @@
 ;; Adding those functions to the global registry.
 
 (fdat/register {'clojure.core/range  range
-                `mult                [1 mult]
+                ::mult               [1 mult]
                 `pre-inc             [1 pre-inc]})
 
 
@@ -96,7 +96,8 @@
 
 
 (def f
-     (fdat/? (pre-inc (fdat/? (mult 3)))))
+     (fdat/? (pre-inc (fdat/? ::mult
+                              (mult 3)))))
 
 
 (def f-memento
