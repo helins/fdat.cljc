@@ -7,6 +7,228 @@ Project](https://img.shields.io/clojars/v/dvlopt/fdat.svg)](https://clojars.org/
 
 Compatible with Clojurescript.
 
+Plugins for [Nippy](https://github.com/ptaoussanis/nippy) and
+[Transit](https://github.com/cognitect/transit-clj).
+
+Wouldn't it be nice to be able to serialize functions or infinite sequences?
+Persist them to a file or sending them over the network without a flinch?
+Sending events that actually look like events, like functions, instead of
+translating them manually to some inconvenient data representation?
+
+```clojure
+;; For instance, using Nippy.
+
+;; Impossible.
+
+(-> (range)
+    nippy/freeze)
+
+
+;; Possible, but gets serialized as a realized sequence which can be really
+;; large, it would be way cheaper to recompute it.
+;;
+;; Furthermore, it would be nice if we could transmit the idea of a random
+;; range rather than the exact one we have computed in our process.
+
+(-> (range (random-int 1000000000))
+    nippy/freeze)
+
+
+;; Forget about it.
+
+(-> my-function
+    nippy/freeze)
+
+
+;; What we need.
+
+(defn random-range
+  [n]
+  (range (rand-int n)))
+
+
+;; Serializing the idea of a random range.
+
+(-> (fdat/? (random-range 1000000000))
+    nippy/freeze)
+
+
+;;  Serializing our random range exactly as it is.
+
+(-> (random-range 1000000000)
+    nippy/freeze)
+```
+
+Code is data, this axiom holds true until one has to serialize functions. Things
+get even more complicated when code needs to be shared between processes running
+in different environments, such as between Clojure and Clojurescript.
+
+Instead of trying to literaly share code (eg. sending jars over the network),
+this library provides a barely intrusive way for annotating IMetas such as
+functions or sequences (functions in disguise) in order to track how they can be
+rebuilt. Serializers like Nippy or Transit can then automatically use that
+information.
+
+# Usage
+
+## Supported serializers
+
+One can use either Nippy or Transit by requiring one of the plugins. And
+everything is taken care of. No matter where those functions/sequences/IMetas
+are in the data we serialize, they get handled automatically, both at
+serialization and deserialization.
+
+## Automatically annotating IMetas using the `?` macro
+
+Annotating means keeping track of a key and (if needed) arguments. The key
+refers to a function kept in a registry that we can use to rebuild our original
+IMeta when providing (if needed) the original arguments. Manually, it looks
+like:
+
+```clojure
+(require '[dvlopt.fdat :as fdat])
+
+(fdat/snapshot (range)
+               'clojure.core/range)
+
+(fdat/snapshot (random-range 1000000000)
+               'user/range-range
+               [1000000000])
+```
+
+Doing so, we attach an `::fdat/k` and `::fdat/args` to the metadata of the first
+argument.
+
+This is tedious and intrusive. Fortunately, the `fdat/?` macro does it for us
+while taking care that arguments are evaled only once:
+
+```clojure
+(fdat/? (range (fdat/? (rand-int 1000000)))))
+```
+
+## Recalling how to build an IMeta from its former metadata
+
+That was all for annotations. The second part is being able to recall how to
+recreate the original IMetas.
+
+```clojure
+;; We add to the global registry what we need. We do it once and for all.
+;;
+;; `range`         is variadic.
+;; `random-range`  takes one argument, mentionning it explicitely is an optimization.
+
+(fdat/register {'clojure.core.range range
+                'user/random-range  [1 random-range]})
+```
+
+
+## As a better alternative to event vectors
+
+Without such a scheme, one has to use event vectors or a similar construct
+in order to abstract computation as data:
+
+```clojure
+[:my-fn-or-event 1 2 :arguments]
+```
+
+We argue that this is intrusive and inefficient.
+
+First of all, one has to adopt a particular style and stick to it. It often
+involves writing a program twice: the functions and all the translation between
+those functions and their data representations. It does not feel too smart.
+
+Second, what is supposed to be a mere function call turns into vector
+destructing and manipulation, if only but to access arguments.
+
+Third, all those vector manipulations really slow down our programs. We want to
+pay the cost of serialization only at serialization, while things run as usual
+otherwise.
+
+Lastly, we want to be able to turn off automatic annotation (the `fdat/?`
+macro), either entirely or for given namespaces. That means that we can add
+those small annotation in our programs just in case we need serialization later
+without paying any cost. This is especially important for libraries so they can
+provide serialization without incuring any overhead if it is not needed by the
+user.
+
+## Custom registry and handling unknown keys
+
+A registry is a function which maps a key to a function that will be used for
+rebuilding an IMeta. The global registry is simply a map kept in an atom.
+
+Keeping a custom registry can be useful for at least 2 reasons. First, testing
+or stubbing. Second, during deserialization, if a registry does not provide a
+function for a key, an exception is thrown. It is trivial to modify that
+behavior. For instance, returning nil instead of throwing:
+
+```clojure
+(defn my-registry
+
+   [k]
+
+   (or (fdat/registry k)
+       (fn handle [_args]
+         nil)))
+```
+
+## Compile time elision
+
+We can control annotations by `fdat/?` at compile time (and at runtime for
+Clojure but not Clojurescript). Pay only for what you use. A library can be
+prepared for serialization, and if the user does not need it, annotation can be
+disabled so that there is no overhead.
+
+For compilation (either Clojure or Clojurescript), one can provide the following
+`-D` properties in `deps.edn` or, if using Shadow-CLJS for Clojurescript, in
+`shadow-cljs.edn`:
+
+```clojure
+;; Turning off by default, except for the namespaces in the white list.
+;; Namespaces are provided in a vector where the usual white spaces must be ",".
+
+{:jvm-opts ["-Dfdat.track.default=false"
+            "-Dfdat.track.white-list=[allowed-ns-1,allowed-ns-2]"]}
+
+
+;; Otherwise, is turned on by default, but we can black list namespaces.
+
+{:jvm-opts ["-Dfdat.track.black-list=[fobidden-ns-1,forbidden-ns-2]"]}
+
+```
+
+Alternatively, one can set environment properties, replacing dots with
+underscores:
+
+```bash
+env fdat_track_default=false  my_command ...
+```
+
+At runtime, in Clojure only, one can dynamically do the same using the
+`dvlopt.fdat.track` namespace.
+
+# Adapting for a serializer
+
+In the unlikely event that Nippy or Transit is not enough, one can adapt this
+scheme to another serializer (and contribute it here). One would study how these
+plugins are written.
+
+The following steps might look slightly counterintuive. Indeed, it was tricky to
+develop a way that would potentially work for any serializer, either from
+Clojure or Clojurescript.
+
+In short, serializers typically deals in concrete types. One must find a way to
+modify how `clojure.lang.IMetas` are handled. Specifically, they should be turned
+into a `dvlopt.fdat.Memento` by using the `dvlopt.fdat/memento` function which
+either returns a Memento if it finds at least a `::fdat/k` in the medata, or
+nothing, meaning that the `IMeta` should be processed as usual.
+
+Then, one must extend how a `Memento` is serialized. It should simply extract
+`:snapshot` from it, which is the original metadata map of the `IMeta`, which
+contains at least our beloved `::fdat/k` and `::fdat/args`, and pass it on to be
+serialized as a regular map.
+
+For unpacking, the only step is to extend how a `Memento` is deserialized by
+calling the `dvlopt.fdat/recall` on the metadata map.
 
 ## License
 

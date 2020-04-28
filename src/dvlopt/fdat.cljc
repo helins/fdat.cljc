@@ -1,6 +1,7 @@
 (ns dvlopt.fdat
 
-  "Serialization and deserialization utilities for IMetas such as function and (possbily) infinite sequences.
+  "Serialization and deserialization utilities for IMetas such as function and infinite sequences,
+   amongst other things.
 
    See README for the big picture."
 
@@ -105,7 +106,7 @@
 
   "Adds or removes functions for keys.
 
-   `k->f` is a map where `k` is an arbitrary key (often a qualified symbol or keyword) and `f` specifies
+   `k->f` is a map where `k` is an arbitrary key (a qualified symbol or qualified keyword) and `f` specifies
    a function such as:
 
    ```clojure
@@ -115,7 +116,7 @@
     }
    ```
 
-   Providing the number of arguments will result in faster function application by using destructing instead
+   Providing the number of arguments will result in faster function application by using destructuring instead
    of `apply`. Arities 0 to 8 can be optimized that way. Beyond, reverts to using `apply`. Providing `:no-apply`
    instead of a number means the function will not be called, simply returned in exchange of args."
 
@@ -161,7 +162,7 @@
   
    Serializers typically deal in concrete types. Here is one.
   
-   A Memento simply store metadata under `:snapshot`. Those metadata can then
+   A Memento simply stores metadata under `:snapshot`. Those metadata can then
    be given back to the serializer as a simple map.
   
    See also [[recall]]."
@@ -178,7 +179,7 @@
 
 (defn recall
 
-  "\"Recall how it was using its former metadata.\"
+  "\"Recall how an IMeta was was using its former metadata.\"
 
    Given `metadata` containing a ::key and (if needed) ::args, rebuilds an IMeta by calling
    the appropriate function from the `registry` (global if not provided).
@@ -218,7 +219,7 @@
    
    Simply puts that information in its metadata.
 
-   Typically, the [[?]] is prefered as it does this automatically."
+   Typically, the [[?]] macro is prefered as it does this automatically."
 
   ([imeta k]
 
@@ -266,7 +267,7 @@
 
 (defn- -?
 
-  ;;
+  ;; Used bu [[?]].
 
   [k f-sym args call]
 

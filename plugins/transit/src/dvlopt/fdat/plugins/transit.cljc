@@ -1,6 +1,6 @@
 (ns dvlopt.fdat.plugins.transit
 
-  "Ser/de for Transit.
+  "Ser/de plugin for Transit.
   
    See README for examples."
 
@@ -50,7 +50,7 @@
   "Provides `:handlers` for writes as well as a necessary `:transform` function."
 
   ;; The Fn/MetaFn handlers will never be called since :transform effectively transforms annotated
-  ;; functions into Memento, but without those handlers, :transform would not be called in the first
+  ;; functions into Mementoes, but without those handlers, :transform would not be called in the first
   ;; place.
 
   ([]

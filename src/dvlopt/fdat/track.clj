@@ -26,7 +26,7 @@
 
 (defn auth
 
-  "Retrieves the current state."
+  "Retrieves the current state of what is allowed and what is not."
 
   []
 
@@ -37,7 +37,7 @@
 
 (defn clear!
 
-  "C"
+  "Resets eveything (ie. allow all namespace by default)."
 
   []
 
