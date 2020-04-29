@@ -223,7 +223,7 @@
 
    Typically, the [[?]] macro is prefered as it does this automatically."
 
-  ([imeta k]
+  ([k imeta]
 
    (vary-meta imeta
               assoc
@@ -231,15 +231,15 @@
               k))
 
 
-  ([imeta k args]
+  ([k args imeta]
 
    (if-some [args-2 (not-empty args)]
      (vary-meta imeta
                 merge
                 {::args args
                  ::k    k})
-     (snapshot imeta
-               k))))
+     (snapshot k
+               imeta))))
 
 
 
@@ -265,7 +265,8 @@
 (if (some-> (find-ns 'cljs.analyzer)
             (ns-resolve '*cljs-file*)
             deref)
-  (defn- -resolve-sym [env x]
+
+  (defn- -resolve [env x]
     (-enforce-sym x)
     (let [resolved (:name (cljs.analyzer.api/resolve env
                                                      x))]
@@ -274,6 +275,7 @@
         (symbol "clojure.core"
                 (name resolved))
         resolved)))
+
   (defn- -resolve [_env x]
     (-enforce-sym x)
     (symbol (resolve x)))))
@@ -285,8 +287,8 @@
    
 (defn- -autoresolve
 
-  ;; Autoresolved keys like `foo (akin to autoresolved keywors like ::foo) are passed to
-  ;; macros inside a quote form.
+  ;; Autoresolved keys like `foo (akin to autoresolved keywords like ::foo) are passed to
+  ;; macros inside a quote form while keywords need no special treatment.
 
   [x]
 
@@ -311,16 +313,16 @@
 
   (if (track/enabled? (symbol (namespace k)))
     (if (empty? args)
-      `(snapshot ~call
-                 '~k)
+      `(snapshot '~k
+                 ~call)
       (let [arg-bindings (take (count args)
                                (repeatedly gensym))]
         `(let ~(vec (interleave arg-bindings
                                 args))
-           (snapshot ~(cons (first call)
-                            arg-bindings)
-                     '~k
-                     (vector ~@arg-bindings)))))
+           (snapshot '~k                                          
+                     (vector ~@arg-bindings)
+                     ~(cons (first call)
+                            arg-bindings)))))
     call)))
 
 
@@ -373,10 +375,8 @@
 
    (if (list? call)
      (let [[f-sym & args] call]
-       (-? (if (symbol? f-sym)
-             (-resolve &env
-                       f-sym)
-             )
+       (-? (-resolve &env
+                     f-sym)
            args
            call))
      (-? (-resolve &env
