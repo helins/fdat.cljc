@@ -112,15 +112,38 @@
    a function such as:
 
    ```clojure
-   {'some.ns/my-fn-1 my-fn-1      ;; Args can by variadic
-    'some.ns/my-fn-2 [2 my-fn-2]  ;; Optimized destructuring for 2 args
-    'some.ns/my-fn-3 nil          ;; Removes that key
+   {'some.ns/my-fn-1     my-fn-1        ;; Args can by variadic
+    'some.ns/my-fn-2     [2 my-fn-2]    ;; Optimized destructuring for 2 args
+    'some.ns/my-fn-3     nil            ;; Removes that key
+    'some.ns/interned-fn #'interned-fn  ;; Reference to a var
     }
    ```
 
    Providing the number of arguments will result in faster function application by using destructuring instead
    of `apply`. Arities 0 to 8 can be optimized that way. Beyond, reverts to using `apply`. Providing `:no-apply`
-   instead of a number means the function will not be called, simply returned in exchange of args."
+   instead of a number means the function will not be called, simply returned in exchange of args. Actually, using
+   `:no-apply` implies that it could refer to any IMeta, not particularly a function.
+
+   Using that last idea, `Vars` (functions interned by using `defn` or any IMeta interned using `def`) are treated
+   specially. The value they hold gets annotated and then added to the registry with an arity of :no-apply.
+
+   For instance, some event handler that does something, it does not need any initialization:
+
+   ```clojure
+
+   (defn event-handler
+     [event]
+     ...)
+
+
+   (register {'some.ns/event-handler #'event-handler})
+
+   (= (::k (meta event-handler))
+      'some.ns/event-handler)
+   ```
+
+   We see our `event-handler` now has the intended key in its metadata and it is referenced in the registry.
+   Thus, it is conveniently serializable."
 
   ([k->f]
 
@@ -135,11 +158,17 @@
                 (if f
                   (assoc registry-2
                          k
-                         (if (fn? f)
-                           (-variadic-applier f)
-                           ((get -appliers
-                                 (first f)
-                                 -variadic-applier) (second f))))
+                         (cond
+                           (vector? f) ((get -appliers
+                                             (first f)
+                                             -variadic-applier) (second f))
+                           (var? f)    ((get -appliers
+                                             :no-apply) (alter-var-root f
+                                                                        vary-meta
+                                                                        assoc
+                                                                        ::k
+                                                                        k))
+                           :else       (-variadic-applier f)))
                   (dissoc registry-2
                           k)))
               registry
