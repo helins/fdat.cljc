@@ -135,6 +135,11 @@ The symbol of the function is extracted as the key. Because a key should be
 qualified, it is resolved automatically (eg. `random-range` becomes
 `user/random-range`).
 
+In Clojurescript, symbols that resolve to the `'cljs.core` namespace are
+qualified as `'clojure.core` in order to garantee consistency when exchanging
+data between Clojure and Clojurescript processes. For instance, `range` is
+qualified as `clojure.core/range` instead of `cljs.core/range`.
+
 A key can be provided explicitly, although this would be less often needed. When
 provided explicitly, it can be a keyword, but qualified nonetheless.
 
@@ -142,6 +147,9 @@ provided explicitly, it can be a keyword, but qualified nonetheless.
 (fdat/? :some.namespace/keyword-key
         (random-range 1000000000))
 ```
+
+Further, when arguments are provided, the end result is like manual annotation
+using `dvlopt.fdat/snapshot` but it leverages compile time elision (see below).
 
 An additional property is those functions become transparent for developping and
 debugging, one can simply have a look at the metadata.

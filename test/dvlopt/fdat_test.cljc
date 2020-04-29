@@ -136,13 +136,17 @@
            (f 3)
            (f-recalled 3)
            ((recall-n f
-                      10) 3)
-           ((-> (fdat/? (fdat.external/pre-inc (fdat/? (mult-referred 3))))
+                      10) 3))
+        "Rebuilding a function")
+
+  (t/is (= 12
+           ((-> (fdat/? `fdat.external/pre-inc
+                        (fdat.external/pre-inc (fdat/? (mult-referred 3))))
                 fdat/memento
                 :snapshot
                 fdat/recall)
             3))
-        "Rebuilding a function")
+        "Resolution of keys")
 
   (t/is (= (take 100
                  (range))

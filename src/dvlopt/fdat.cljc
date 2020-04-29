@@ -13,6 +13,15 @@
                     [dvlopt.void       :as void]))
 
 
+;;;;;;;;;; MAYBEDO
+;;
+;; Automatically understand `partial` and anonymous functions? Named free functions?
+;; Would be really useful, but less efficient to use (eg. the result of `partial` is
+;; considered variadic although the curried fn might have a fixed arity.
+;;
+;; Leveraging :arglists in some way from the metadata of functions defined by `defn`?
+
+
 
 
 ;;;;;;;;;; Registry containg functions for rebuildable IMetas
@@ -237,22 +246,57 @@
 
 #?(:clj
 
+(defn- -enforce-sym
+
+  [sym]
+
+  (if (symbol? sym)
+    sym
+    (throw (IllegalArgumentException. (str "Must be symbol: " sym))))))
+
+
+
+
+#?(:clj
+
 ;; Hack adapted from `taoensso.encore/compiling-cljs?`.
 ;; Depending on whether we are compiling for CLJ or CLJS, symbols get resolved differently.
 
 (if (some-> (find-ns 'cljs.analyzer)
             (ns-resolve '*cljs-file*)
             deref)
-  (defn- -resolve-sym [env sym]
-    (let [sym-2 (:name (cljs.analyzer.api/resolve env
-                                                  sym))]
-      (if (= (namespace sym-2)
+  (defn- -resolve-sym [env x]
+    (-enforce-sym x)
+    (let [resolved (:name (cljs.analyzer.api/resolve env
+                                                     x))]
+      (if (= (namespace resolved)
              "cljs.core")
         (symbol "clojure.core"
-                (name sym-2))
-        sym-2)))
-  (defn- -resolve-sym [_env sym]
-    (symbol (resolve sym)))))
+                (name resolved))
+        resolved)))
+  (defn- -resolve [_env x]
+    (-enforce-sym x)
+    (symbol (resolve x)))))
+
+
+
+
+#?(:clj
+   
+(defn- -autoresolve
+
+  ;; Autoresolved keys like `foo (akin to autoresolved keywors like ::foo) are passed to
+  ;; macros inside a quote form.
+
+  [x]
+
+  (or (cond
+        (qualified-ident? x) x
+        (and (sequential? x)
+             (= (first x)
+                'quote))     (second x))
+      (throw (IllegalArgumentException. (str "Key for registry must be qualified symbol or keyword: "
+                                             x))))))
 
 
 
@@ -263,18 +307,22 @@
 
   ;; Used by [[?]].
 
-  [k f-sym args call]
+  [k args call]
 
   (if (track/enabled? (symbol (namespace k)))
-    (let [args-2 (take (count args)
-                       (repeatedly gensym))]
-      `(let ~(vec (interleave args-2
-                             args))
-         (snapshot ~(list* f-sym
-                           args-2)
-                   '~k
-                   (vector ~@args-2))))
+    (if (empty? args)
+      `(snapshot ~call
+                 '~k)
+      (let [arg-bindings (take (count args)
+                               (repeatedly gensym))]
+        `(let ~(vec (interleave arg-bindings
+                                args))
+           (snapshot ~(cons (first call)
+                            arg-bindings)
+                     '~k
+                     (vector ~@arg-bindings)))))
     call)))
+
 
 
 
@@ -321,19 +369,32 @@
   
    README documents how this capturing can be turned on a per-namespace basis."
 
-  ([[f-sym & args :as call]]
- 
-   (-? (if (symbol? f-sym)
-         (-resolve-sym &env
+  ([call]
+
+   (if (list? call)
+     (let [[f-sym & args] call]
+       (-? (if (symbol? f-sym)
+             (-resolve &env
                        f-sym)
-         (throw (IllegalArgumentException. (str "Function name must be symbol: " f-sym))))
-       f-sym
-       args
+             )
+           args
+           call))
+     (-? (-resolve &env
+                   call)
+         nil
+         call)))
+
+
+  ([k call]
+
+   (-? (-autoresolve k)
+       (when (list? call)
+         (rest call))
        call))
 
-  ([k [f-sym & args :as call]]
 
-   (-? k
-       f-sym
+  ([k args call]
+
+   (-? (-autoresolve k)
        args
        call))))

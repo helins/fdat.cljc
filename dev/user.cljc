@@ -7,7 +7,7 @@
             [clojure.core.protocols           :as clj.protocols]
             [clojure.repl]
             [clojure.test                     :as t]
-            [dvlopt.fdat                      :as fdat]
+            [dvlopt.fdat                      :as fdat :refer [?]]
             [dvlopt.fdat.plugins.nippy        :as fdat.plugins.nippy]
             [dvlopt.fdat.plugins.transit      :as fdat.plugins.transit]
             [dvlopt.fdat.track                :as fdat.track]
