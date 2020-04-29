@@ -20,6 +20,8 @@
 ;; considered variadic although the curried fn might have a fixed arity.
 ;;
 ;; Leveraging :arglists in some way from the metadata of functions defined by `defn`?
+;;
+;; Better error messages when symbols are not properly resolved?
 
 
 
@@ -165,17 +167,11 @@
                 (if f
                   (assoc registry-2
                          k
-                         (cond
-                           (vector? f) ((get -appliers
-                                             (first f)
-                                             -variadic-applier) (second f))
-                           (var? f)    ((get -appliers
-                                             :no-apply) (alter-var-root f
-                                                                        vary-meta
-                                                                        assoc
-                                                                        ::k
-                                                                        k))
-                           :else       (-variadic-applier f)))
+                         (if (coll? f)
+                           ((get -appliers
+                                 (first f)
+                                 -variadic-applier) (second f))
+                           (-variadic-applier f)))
                   (dissoc registry-2
                           k)))
               registry
@@ -295,14 +291,25 @@
 
 #?(:clj
 
-;; Hack adapted from `taoensso.encore/compiling-cljs?`.
+(def ^:private -compiling-cljs?
+  
+  ;; Hack adapted from `taoensso.encore/compiling-cljs?`.
+
+  (some-> (find-ns 'cljs.analyzer)
+          (ns-resolve '*cljs-file*)
+          deref)))
+
+
+#?(:clj
+
 ;; Depending on whether we are compiling for CLJ or CLJS, symbols get resolved differently.
 
-(if (some-> (find-ns 'cljs.analyzer)
-            (ns-resolve '*cljs-file*)
-            deref)
+(if -compiling-cljs?
 
-  (defn- -resolve [env x]
+  (defn- -resolve
+
+    [env x]
+
     (-enforce-sym x)
     (let [resolved (:name (cljs.analyzer.api/resolve env
                                                      x))]
@@ -312,7 +319,11 @@
                 (name resolved))
         resolved)))
 
-  (defn- -resolve [_env x]
+
+  (defn- -resolve
+
+    [_env x]
+
     (-enforce-sym x)
     (symbol (resolve x)))))
 
@@ -341,13 +352,34 @@
 
 #?(:clj
 
+(defn- -ns-enabled?
+
+  ;; Is the namespace of the `k` enabled or was it disable by compile time elision?
+  ;;
+  ;; Defaults to current namespace when `k` is not provided.
+
+  ([]
+
+   (track/enabled? (symbol (str *ns*))))
+
+
+  ([k]
+
+   (track/enabled? (symbol (or (namespace k)
+                               (str *ns*)))))))
+
+
+
+
+#?(:clj
+
 (defn- -?
 
   ;; Used by [[?]].
 
   [k args user-args? call]
 
-  (if (track/enabled? (symbol (namespace k)))
+  (if (-ns-enabled? k)
     (cond
       (empty? args)   `(snapshot '~k
                                  ~call)
@@ -365,10 +397,58 @@
     call)))
 
 
-#?(:clj (declare ?))
 
 
 #?(:clj
+
+;; See [[?]] arity 1.
+;;
+;; Automatic annotation of interned Vars is completely different depending on the platform.
+;; CLJS does not have any of that Var metaprogramming and will never have.
+
+(if -compiling-cljs?
+
+  (defn -interned
+
+    [call]
+
+    (if (-ns-enabled?)
+      (let [sym (second call)]
+        `(do
+           ~call
+           (set! ~sym
+                 (vary-meta ~sym
+                            assoc
+                            ::k
+                            '~(symbol (str *ns*)
+                                      (name sym))))))
+      call))
+
+
+  (defn- -interned
+
+    [call]
+
+    (if (-ns-enabled?)
+      (let [k (symbol (str *ns*)
+                      (name (second call)))]
+        `(alter-var-root ~call
+                         vary-meta
+                         assoc
+                         ::k
+                         '~k))
+      call))))
+
+
+
+
+
+
+#?(:clj
+
+;; See [[?]] arity 1.
+;;
+;; Special treatment and optimization of (partial ...) forms.
 
 (defn- -partial
 
@@ -439,15 +519,17 @@
 
    (if (list? call)
      (let [[f-sym & args] call]
-       (if (= f-sym
-              'partial)
-         (-partial args
-                   call)
-         (-? (-resolve &env
-                       f-sym)
-             args
-             false
-             call)))
+       (cond
+         (#{'def
+            'defn} f-sym) (-interned call)
+         (= f-sym
+            'partial)     (-partial args
+                                    call)
+         :else            (-? (-resolve &env
+                                        f-sym)
+                              args
+                              false
+                              call)))
      (-? (-resolve &env
                    call)
          nil

@@ -83,11 +83,12 @@
 
 
 
-(defn my-inc
+(?
+ (defn my-inc
 
-  [x]
+   [x]
 
-  (inc x))
+   (inc x)))
 
 
 ;; Adding those functions to the global registry.
@@ -96,7 +97,7 @@
                 `fdat.external/mult-referred mult-referred
                 `fdat.external/pre-inc       fdat.external/pre-inc
                 ::mult                       [1 mult]
-                `my-inc                      #'my-inc
+                `my-inc                      [:no-apply my-inc]
                 `pre-inc                     [1 pre-inc]})
 
 
@@ -106,8 +107,8 @@
 
 
 (def f
-     (fdat/? (pre-inc (fdat/? ::mult
-                              (mult 3)))))
+     (? (pre-inc (? ::mult
+                    (mult 3)))))
 
 
 (def f-memento
@@ -147,8 +148,8 @@
         "Rebuilding a function")
 
   (t/is (= 12
-           ((-> (fdat/? `fdat.external/pre-inc
-                        (fdat.external/pre-inc (fdat/? (mult-referred 3))))
+           ((-> (? `fdat.external/pre-inc
+                   (fdat.external/pre-inc (? (mult-referred 3))))
                 fdat/memento
                 :snapshot
                 fdat/recall)
