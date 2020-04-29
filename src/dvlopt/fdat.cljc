@@ -31,7 +31,14 @@
 
   ;; Global map of k -> f.
 
-  (atom {}))
+  (atom {`partial-1  (fn partial-1 [[f a]]
+                       (partial f a))
+         `partial-2  (fn partial-2 [[f a b]]
+                       (partial f a b))
+         `partial-3+ (fn partial-3+ [[f a b & more]]
+                       (fn partial-variadic [& even-more]
+                         (apply f a b (concat more
+                                              even-more))))}))
 
 
 
@@ -358,6 +365,31 @@
     call)))
 
 
+#?(:clj (declare ?))
+
+
+#?(:clj
+
+(defn- -partial
+
+  ;;
+
+  [args call]
+
+  (-? (let [n-args (count args)]
+        (cond
+          (<= n-args
+              1)      (throw (IllegalArgumentException. (str "Partial application without providing arguments: "
+                                                             call)))
+          (= n-args
+             2)      `partial-1
+          (= n-args
+             3)      `partial-2
+          :else      `partial-3+))
+      args
+      false
+      call)))
+
 
 
 
@@ -407,11 +439,15 @@
 
    (if (list? call)
      (let [[f-sym & args] call]
-       (-? (-resolve &env
-                     f-sym)
-           args
-           false
-           call))
+       (if (= f-sym
+              'partial)
+         (-partial args
+                   call)
+         (-? (-resolve &env
+                       f-sym)
+             args
+             false
+             call)))
      (-? (-resolve &env
                    call)
          nil

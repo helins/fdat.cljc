@@ -5,7 +5,8 @@
   {:author "Adam Helinski"}
 
   (:require [clojure.test         :as    t]
-            [dvlopt.fdat          :as    fdat]
+            [dvlopt.fdat          :as    fdat #?(:clj  :refer
+                                                 :cljs :refer-macros) [?]]
             [dvlopt.fdat.external :as    fdat.external
                                   :refer [mult-referred]])
   #?(:cljs (:require-macros [dvlopt.fdat])))
@@ -56,10 +57,8 @@
 
   ([f]
 
-   (fn curried [n]
-     (pre-inc f
-              n)))
-
+   (? (partial pre-inc
+               f)))
 
   ([f n]
 
@@ -84,12 +83,20 @@
 
 
 
+(defn my-inc
+
+  [x]
+
+  (inc x))
+
+
 ;; Adding those functions to the global registry.
 
 (fdat/register {'clojure.core/range          range
                 `fdat.external/mult-referred mult-referred
                 `fdat.external/pre-inc       fdat.external/pre-inc
                 ::mult                       [1 mult]
+                `my-inc                      #'my-inc
                 `pre-inc                     [1 pre-inc]})
 
 
@@ -155,4 +162,10 @@
            (take 100
                  (recall-n sq
                             10)))
-        "Rebuilding an infinite sequence"))
+        "Rebuilding an infinite sequence")
+
+  (t/is (= 42
+           ((recall-n my-inc
+                      10)
+            41))
+        "Var has been properly annotated during registering"))
