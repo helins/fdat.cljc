@@ -309,20 +309,23 @@
 
   ;; Used by [[?]].
 
-  [k args call]
+  [k args user-args? call]
 
   (if (track/enabled? (symbol (namespace k)))
-    (if (empty? args)
-      `(snapshot '~k
-                 ~call)
-      (let [arg-bindings (take (count args)
-                               (repeatedly gensym))]
-        `(let ~(vec (interleave arg-bindings
-                                args))
-           (snapshot '~k                                          
-                     (vector ~@arg-bindings)
-                     ~(cons (first call)
-                            arg-bindings)))))
+    (cond
+      (empty? args)   `(snapshot '~k
+                                 ~call)
+      user-args?      `(snapshot '~k
+                                 ~args
+                                 ~call)
+      :else           (let [arg-bindings (take (count args)
+                                               (repeatedly gensym))]
+                        `(let ~(vec (interleave arg-bindings
+                                                args))
+                           (snapshot '~k
+                                     (vector ~@arg-bindings)
+                                     ~(cons (first call)
+                                             arg-bindings)))))
     call)))
 
 
@@ -378,9 +381,11 @@
        (-? (-resolve &env
                      f-sym)
            args
+           false
            call))
      (-? (-resolve &env
                    call)
+         nil
          nil
          call)))
 
@@ -388,8 +393,11 @@
   ([k call]
 
    (-? (-autoresolve k)
-       (when (list? call)
+       (when (and (list? call)
+                  (not (#{"fn"
+                          "fn*"} (name (first call)))))
          (rest call))
+       false
        call))
 
 
@@ -397,4 +405,5 @@
 
    (-? (-autoresolve k)
        args
+       true
        call))))
