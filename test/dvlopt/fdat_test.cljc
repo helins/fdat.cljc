@@ -4,169 +4,153 @@
 
   {:author "Adam Helinski"}
 
-  (:require [clojure.test         :as    t]
-            [dvlopt.fdat          :as    fdat #?(:clj  :refer
-                                                 :cljs :refer-macros) [?]]
-            [dvlopt.fdat.external :as    fdat.external
-                                  :refer [mult-referred]])
+  (:require [clojure.test :as t]
+            [dvlopt.fdat  :as fdat #?(:clj  :refer
+                                      :cljs :refer-macros) [?]])
   #?(:cljs (:require-macros [dvlopt.fdat])))
 
 
 
 
-;;;;;;;;;; Useful for testing ser/de in other namespaces
+;;;;;;;;;; Utilities
 
 
 (defn recall-serde
 
   "Ser/de `n` times `imeta`."
 
-  [imeta n serialize deserialize]
+  [n serialize deserialize imeta]
 
   (if (pos? n)
-    (recur (-> imeta
-               serialize
-               deserialize)
-           (dec n)
+    (recur (dec n)
            serialize
-           deserialize)
+           deserialize
+           (-> imeta
+               serialize
+               deserialize))
     imeta))
 
 
 
 
-(defn recall-n
-
-  "Basic shallow recalling using [[recall-serde]]."
-
-  [imeta n]
-
-  (recall-serde imeta
-                n
-                fdat/memento
-                (comp fdat/recall
-                      :snapshot)))
-
-
-
-
-;;;;;;;;;; Curriable functions
-
-
-(defn pre-inc
-
-  ([f]
-
-   (? (partial pre-inc
-               f)))
-
-  ([f n]
-
-   (f (inc n))))
-
-
-
-
-(defn mult
-
-  ([n]
-
-   (fn curried [m]
-     (mult n
-           m)))
-
-  ([n m]
-
-   (* n
-      m)))
-
-
+;;;;;;;;;; Using `?` and `!` in various ways
+;;
+;; Creating functions and sequences
 
 
 (?
- (defn my-inc
+ (defn inc-mult
 
-   [x]
+   "Simple function that will be furthered recaptured in various ways."
 
-   (inc x)))
+   ([x]
 
+    (? (partial inc-mult
+                x)))
 
-;; Adding those functions to the global registry.
+   ([x y]
 
-(fdat/register {'clojure.core/range          range
-                `fdat.external/mult-referred mult-referred
-                `fdat.external/pre-inc       fdat.external/pre-inc
-                ::mult                       [1 mult]
-                `my-inc                      [:no-apply my-inc]
-                `pre-inc                     [1 pre-inc]})
+    (* (inc x)
+       y))))
 
 
 
 
-;;;;;;;;;; Used tests tests, also useful for dev
-
-
-(def f
-     (? (pre-inc (? ::mult
-                    (mult 3)))))
-
-
-(def f-memento
-     (fdat/memento f))
-
-
-(def f-recalled
-     (fdat/recall (:snapshot f-memento)))
+(def partial-inc-mult
+     (? (partial inc-mult
+                 2)))
 
 
 
 
-(def sq
-     (fdat/? (range)))
+(? ^{::fdat/apply 1}
+
+ (defn curried-inc-mult
+
+   ""
+   
+   ([x]
+
+    (fn curried [y]
+      (inc-mult x
+                y)))))
 
 
-(def sq-memento
-     (fdat/memento sq))
 
 
-(def sq-recalled
-     (fdat/recall (:snapshot sq-memento)))
+(? ^{::fdat/apply 1}
+
+  (defn curried-inc-mult-tracked
+
+    ""
+
+    ([x]
+
+     (? ^{::fdat/key  curried-inc-mult-tracked
+          ::fdat/args [x]}
+        (fn curried [y]
+          (inc-mult x
+                    y))))))
 
 
 
 
-;;;;;;;;;; Assertions
+(fdat/! ^{::fdat/apply :variadic}
+        range)
 
 
-(t/deftest recall
+(def sq-infinite
+     (? (range)))
 
-  (t/is (= 12
-           (f 3)
-           (f-recalled 3)
-           ((recall-n f
-                      10) 3))
-        "Rebuilding a function")
 
-  (t/is (= 12
-           ((-> (? `fdat.external/pre-inc
-                   (fdat.external/pre-inc (? (mult-referred 3))))
-                fdat/memento
-                :snapshot
-                fdat/recall)
-            3))
-        "Resolution of keys")
+(def sq-finite
+     (? (range 100)))
 
-  (t/is (= (take 100
-                 (range))
-           (take 100
-                 sq-recalled)
-           (take 100
-                 (recall-n sq
-                            10)))
-        "Rebuilding an infinite sequence")
 
-  (t/is (= 42
-           ((recall-n my-inc
-                      10)
-            41))
-        "Var has been properly annotated during registering"))
+
+
+;;;;;;;;;; Not forgetting to register our keys
+
+
+(fdat/register [inc-mult
+                curried-inc-mult
+                curried-inc-mult-tracked
+                range])
+
+
+
+
+;;;;;;;;;; Tests
+
+
+(defn serde-suite
+
+  "A serializer shall use this little suite to test its capacities."
+
+  [serializer deserializer]
+
+  (let [recall-n (partial recall-serde
+                          10
+                          serializer
+                          deserializer)]
+
+    (t/is (= (inc-mult 2
+                       3)
+             ((inc-mult 2) 3)
+             (partial-inc-mult 3)
+             ((recall-n (inc-mult 2)) 3)
+             ((recall-n partial-inc-mult) 3)
+             ((recall-n (? (curried-inc-mult 2))) 3)
+             ((recall-n (curried-inc-mult-tracked 2)) 3))
+          "Ser/de functions captured in different ways")
+
+
+    (let [n (count sq-finite)]
+      (t/is (= (take n
+                     (range))
+               sq-finite
+               (take n
+                     sq-infinite)
+               (take n
+                     (recall-n sq-infinite)))
+            "Ser/de an infinite sequence"))))

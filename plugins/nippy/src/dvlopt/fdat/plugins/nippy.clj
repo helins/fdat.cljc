@@ -1,17 +1,16 @@
 (ns dvlopt.fdat.plugins.nippy
 
   "Ser/de for Nippy.
-
-   Simply must be required.
   
    See README for examples."
 
   {:author "Adam Helinski"}
 
-  (:require [dvlopt.fdat    :as fdat]
-            [taoensso.nippy :as nippy])
+  (:require [dvlopt.fdat         :as fdat]
+            [dvlopt.fdat.plugins :as fdat.plugins]
+            [taoensso.nippy      :as nippy])
   (:import clojure.lang.IMeta
-           dvlopt.fdat.Memento
+           dvlopt.fdat.plugins.Memento
            java.io.DataOutput))
 
 
@@ -39,7 +38,7 @@
        ;; 25 is the byte header for metas.
 
        (-freeze-with-meta! [x ^DataOutput out]
-         (if-some [memento (fdat/memento x)]
+         (if-some [memento (fdat.plugins/memento x)]
            (nippy/-freeze-without-meta! memento
                                         out)
            (do
@@ -54,7 +53,7 @@
 
 
 
-   (nippy/extend-freeze Memento ::fdat/memento
+   (nippy/extend-freeze Memento ::memento
                         
      [memento out]
 
@@ -64,8 +63,9 @@
 
 
 
-   (nippy/extend-thaw ::fdat/memento
+   (nippy/extend-thaw ::memento
 
      [in]
 
-     (fdat/recall (nippy/thaw-from-in! in)))))
+     (fdat.plugins/develop registry
+                           (nippy/thaw-from-in! in)))))

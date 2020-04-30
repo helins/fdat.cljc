@@ -6,7 +6,6 @@
 
   (:require [clojure.test                :as t]
             [cognitect.transit           :as transit]
-            [dvlopt.fdat                 :as fdat]
             [dvlopt.fdat.plugins.transit :as fdat.plugins.transit]
             [dvlopt.fdat-test            :as fdat-test])
   #?(:clj (:import (java.io ByteArrayInputStream
@@ -52,43 +51,11 @@
 
 
 
-(defn recall-n
-
-  "Ser/de `n` times."
-
-  [imeta n]
-
-  (fdat-test/recall-serde imeta
-                          n
-                          serialize
-                          deserialize))
-
-
-
 
 ;;;;;;;;;; Assertions
 
 
-(t/deftest recall
+(t/deftest capturing
 
-  (let [f-data     (serialize fdat-test/f)
-        f-recalled (deserialize f-data)]
-    (t/is (= 12
-             (fdat-test/f 3)
-             (f-recalled 3)
-             ((recall-n f-recalled
-                        10)
-              3))
-          "Rebuilding a function"))
-
-
-   (let [sq-data     (serialize fdat-test/sq)
-         sq-recalled (deserialize sq-data)]
-    (t/is (= (take 100
-                   fdat-test/sq)
-             (take 100
-                   sq-recalled)
-             (take 100
-                   (recall-n sq-recalled
-                             10)))
-          "Rebuilding an infinite sequence")))
+  (fdat-test/serde-suite serialize
+                         deserialize))

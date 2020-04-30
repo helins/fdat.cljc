@@ -8,6 +8,7 @@
             [clojure.repl]
             [clojure.test                     :as t]
             [dvlopt.fdat                      :as fdat :refer [?]]
+            [dvlopt.fdat.plugins              :as fdat.plugins]
             [dvlopt.fdat.plugins.nippy        :as fdat.plugins.nippy]
             [dvlopt.fdat.plugins.transit      :as fdat.plugins.transit]
             [dvlopt.fdat.track                :as fdat.track]

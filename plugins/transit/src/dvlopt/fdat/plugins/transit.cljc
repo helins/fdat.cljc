@@ -6,8 +6,9 @@
 
   {:author "Adam Helinski"}
 
-  (:require [cognitect.transit :as transit]
-            [dvlopt.fdat       :as fdat])
+  (:require [cognitect.transit   :as transit]
+            [dvlopt.fdat         :as fdat]
+            [dvlopt.fdat.plugins :as fdat.plugins])
   (:import #?(:clj clojure.lang.Fn)))
 
 
@@ -22,14 +23,14 @@
 
   ([]
 
-   (handler-in (fdat/registry)))
+   (handler-in fdat/registry))
 
 
   ([registry]
 
    {"fdat" (transit/read-handler (fn deserialize [x]
-                                   (fdat/recall registry
-                                                x)))}))
+                                   (fdat.plugins/develop registry
+                                                         x)))}))
 
 
 
@@ -56,11 +57,11 @@
   ([]
 
    {:handlers  {#?(:clj  Fn
-                   :cljs MetaFn)    (transit/write-handler -tag
-                                                           nil)
-                dvlopt.fdat.Memento (transit/write-handler -tag
-                                                           (fn serialize [x]
-                                                             (:snapshot x)))}
+                   :cljs MetaFn)            (transit/write-handler -tag
+                                                                   nil)
+                dvlopt.fdat.plugins.Memento (transit/write-handler -tag
+                                                                   (fn serialize [x]
+                                                                     (:snapshot x)))}
     :transform (fn transform [x]
-                 (or (fdat/memento x)
+                 (or (fdat.plugins/memento x)
                      x))}))
