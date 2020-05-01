@@ -37,7 +37,7 @@ For instance, using the plugin for the excellent
 (fdat/register [hello])
 
 
-(def bytes
+(def ba
      (nippy/freeze hello))
 
 
@@ -54,6 +54,13 @@ can easily serialize, and maintaining a `registry` that we use in order to know
 what to do with that knowledge at deserialization.
 
 This must sound quite abstract, so let us explore all that.
+
+Feel free to clone this repo and start a REPL, all examples are in
+[./dev/user.clj](./dev/user.clj) :
+
+```bash
+$ clj -A:test:dev:nrepl
+```
 
 ## Supported serializers
 
@@ -152,13 +159,12 @@ exists by itself. However, a fair share of our programs is about producing
 `IMetas`, sequences, functions returning functions.
 
 ```clojure
-
 (? ^{::fdat/apply 1}
   (defn curried-add
     ([x]
      (fn curry [y]
-       (my-closure x
-                   y)))
+       (curried-add x
+                    y)))
     ([x y]
      (+ x
         y))))
@@ -179,11 +185,11 @@ any arity (but is slower) and `:none` meaning no application is the default.
 Remember that `?` can capture function calls and keep track of arguments.
 
 ```clojure
-(def +3
+(def plus-3
      (? (curried-add 3)))
 
 
-(= (meta +3)
+(= (meta plus-3)
    {::fdat/key  'user/curried-add
     ::fdat/args [3]})
 ```
@@ -197,7 +203,7 @@ rather "reproduce") the intended `IMeta`.
 
 ```clojure
 (= 7
-   ((-> +3
+   ((-> plus-3
         nippy/freeze
         nippy/thaw)   4))
 ```
@@ -223,10 +229,10 @@ valuable because it often provides flexibility. Actually, we can rewrite
 
 (fdat/register [add])
 
+(? (partial add
+            3))
 
-(= (meta
-     (? (partial add
-                 3)))
+(= (meta *1)
    {::fdat/key  'dvlopt.fdat/partial-1
     ::fdat/args [add 3]})
 ```
@@ -261,7 +267,7 @@ alias for the `dvlopt.fdat` namespace...
 
 ```clojure
 (? ^{::fdat/key `fdat/invented}
-   ...)
+   (fn [] 42))
 ```
 
 ...will have `'dvlopt.fdat/invented` as its key, although it does not refer to

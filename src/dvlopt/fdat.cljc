@@ -377,7 +377,7 @@
 
   [env mta var-sym]
 
-  (or (some->> (::key meta)
+  (or (some->> (::key mta)
                (-key env))
       (symbol (str *ns*)
               (name var-sym))))
