@@ -7,6 +7,24 @@ Project](https://img.shields.io/clojars/v/dvlopt/fdat.svg)](https://clojars.org/
 
 Compatible with Clojurescript.
 
+
+- [Supported serializers](#supported-serializers)
+- [Common usage](#common-usage)
+    - [The omniscient `?` macro](#omniscient-?)
+    - [Maintaining a registry](#maintaining-registry)
+    - [Mastering `?` and its (not so) many faces](#mastering-?)
+    - [`!`, a useful but dangerous counterpart](#!-counterpart)
+    - [Registries](#registries)
+    - [Serializing ideas (what if Plato was a Clojurist)](#serializing-ideas)
+- [Going further](#going-further)
+    - [As a better alternative to event vectors & friends](#event-vectors)
+    - [Compile time elision](#compile-time-elision)
+- [Library authoring](#library-authoring)
+    - [Writing serializable programs and libraries](#serializable-programs)
+    - [Adapting for a new serializer](#new-serializer)
+- [Run tests](#run-tests)
+
+
 Code is data, this axiom holds true until one has to serialize some functions.
 To further complicate the issue, sometimes data is a function in disguise.
 Notoriously, sequences are indeed "logical lists". How could one save an
@@ -62,7 +80,7 @@ Feel free to clone this repo and start a REPL, all examples are in
 $ clj -A:test:dev:nrepl
 ```
 
-## Supported serializers
+# Supported serializers <a name="supported-serializers">
 
 For the [Nippy plugin, go here](./plugins/nippy).
 
@@ -70,9 +88,9 @@ For the [Transit plugin, go here](./plugins/transit).
 
 However, main concepts are described here only.
 
-## Common usage
+## Common usage <a name="common-usage">
 
-### The omniscient `?` macro
+### The omniscient `?` macro <a name="omniscient-?">
 
 Functions are `IMetas`, meaning they can hold metadata. Actually, everything we
 will discuss applies to all `IMetas`. Sequences are one other useful example.
@@ -138,7 +156,7 @@ You might begin to understand where this is going. If I gave you a specific key
 and, if needed, some arguments, maybe you could make your own `IMeta` instead of
 the one I cannot send you.
 
-### Maintaining a registry
+### Maintaining a registry <a name="maintaining-registry">
 
 A `registry` is simply a map of `key` -> `(fn [args] imeta)`. In other words, a
 key unlocks the secret to producing an `IMeta` given arguments. We did not
@@ -213,7 +231,7 @@ becomes the limit, although the advent of space age made that expression
 obsolete.
 
 
-### Mastering `?` and its (not so) many faces
+### Mastering `?` and its (not so) many faces <a name="mastering-?">
 
 We have seen that `?` understands definitions (`def` and `defn`), calls
 (`(some-fn 1 2 3)`), as well as `partial` application. Partial application is
@@ -274,7 +292,7 @@ alias for the `dvlopt.fdat` namespace...
 anything real.
 
 
-### `!`, a useful but dangerous counterpart
+### `!`, a useful but dangerous counterpart <a name="!-counterpart">
 
 While `?` is about capturing how `IMetas` are created, one might want to reuse
 already existing once. For instance, we do not have to write `add`, we can use
@@ -317,7 +335,7 @@ that alias instead of `+`:
    {::fdat/key 'user/add})  ;; but in reality points to `+`
 ```
 
-### Registries
+### Registries <a name="registries">
 
 At first, one might think it is cumbersome having add all those `IMetas` to some
 `registry`. Actually, this is a feature.
@@ -361,7 +379,7 @@ based on the namespace of the key not-found:
 ```
 
 
-### Serializing ideas (what if Plato was a Clojurist)
+### Serializing ideas (what if Plato was a Clojurist) <a name="serializing-ideas">
 
 Plato was keen about making a distinction between the physical world and the
 "world of Ideas". A pale copy from an inimitable perfection.
@@ -411,9 +429,9 @@ That's it. As simple as that. Hope that elicited a Socratic awakening.
 Besides serializing impossibles things such as infinite sequences, we see that
 even our finite and concrete datastructures can benefit from all this.
 
-## Going further
+## Going further <a name="going-further">
 
-### As a better alternative to event vectors & friends
+### As a better alternative to event vectors & friends <a name="event-vectors">
 
 Without all that, the typical method of sending any "action", "verb", "event" or
 whatnot or so, involves using an event vector or similar:
@@ -446,7 +464,7 @@ especially important for libraries so they can provide serialization without
 incuring any overhead if it is not needed by the user.
 
 
-### Compile time elision
+### Compile time elision <a name="compile-time-elision">
 
 We can control annotations by `?` at compile time (and at runtime for Clojure
 but not Clojurescript). Pay only for what we use.
@@ -495,9 +513,9 @@ still happens:
    {::fdat/key 'whatever/foo})
 ```
 
-## Library authoring
+## Library authoring <a name="library-authoring">
 
-### Writing serializable programs and libraries
+### Writing serializable programs and libraries <a name="serializable-programs">
 
 Thanks to compile time elision and due to the fact that the `?` macro is so
 minimalistic, it does not hurt to write our code as if it needed to be
@@ -507,7 +525,7 @@ overhead.
 Instead of `register`ing to the global registry, a library should always propose
 a collection of the `IMetas` that let the user be in charge of the registering.
 
-### Adapting for a new serializer
+### Adapting for a new serializer <a name="new-serializer">
 
 In the unlikely event that Nippy or Transit are not enough, one can adapt this
 scheme to another serializer (and contribute it here). One would study how these
@@ -535,7 +553,7 @@ develop a way that would potentially work for any serializer, either from
 Clojure or Clojurescript.
 
 
-## Run tests
+## Run tests <a name="run-tests">
 
 Run all tests (JVM and JS based ones):
 
