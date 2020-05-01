@@ -178,14 +178,14 @@ exists by itself. However, a fair share of our programs is about producing
 
 ```clojure
 (? ^{::fdat/apply 1}
-  (defn curried-add
-    ([x]
-     (fn curry [y]
-       (curried-add x
-                    y)))
-    ([x y]
-     (+ x
-        y))))
+   (defn curried-add
+     ([x]
+      (fn curry [y]
+        (curried-add x
+                     y)))
+     ([x y]
+      (+ x
+         y))))
 
 
 (fdat/register [curried-add])
@@ -523,7 +523,8 @@ serializable, knowing that we can turn of capturing at compile time and incur no
 overhead.
 
 Instead of `register`ing to the global registry, a library should always propose
-a collection of the `IMetas` that let the user be in charge of the registering.
+a collection of the `IMetas` it captures and let the user be in charge of the
+registering.
 
 ### Adapting for a new serializer <a name="new-serializer">
 
@@ -541,8 +542,8 @@ nothing, meaning that the `IMeta` should be processed as usual.
 
 Then, one must extend how a `Memento` record itself is serialized. It should
 simply extract `:snapshot` from it, which is the original metadata map of the
-`IMeta`, which contains at least our beloved `key` and (if needed) `arguments`
-pass it on to be serialized as a regular map.
+`IMeta`, which contains at least our beloved `key` and (if needed) `arguments`,
+then pass it on to be serialized as a regular map.
 
 For unpacking, the only step is to extend how a `Memento` is deserialized. The
 `dvlopt.fdat.plugins/develop` function must be called providing the retrieved
