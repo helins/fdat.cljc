@@ -1,34 +1,29 @@
 # FDat.plugins.transit
 
 [![Clojars
-Project](https://img.shields.io/clojars/v/dvlopt/fdat.svg)](https://clojars.org/dvlopt/fdat)
-
-[![Clojars
 Project](https://img.shields.io/clojars/v/dvlopt/fdat.plugins.transit.svg)](https://clojars.org/dvlopt/fdat.plugins.transit.cljc)
 
 Compatible with Clojurescript.
 
-FDat plugin for Transit.
+[FDat](https://github.com/dvlopt/fdat.cljc) plugin for Transit. Specific
+examples resides in the core README.
 
 ## Usage
 
-The core FDat library and Transit must be added to dependencies, they are not
-pulled by default so the user can easily choose any modern version.
+Packaged with the latest version of the core [FDat
+library](https://github.com/dvlopt/fdat.cljc) but Transit must be provided by the user.
 
 [For Transit Clojure, see here](https://github.com/cognitect/transit-clj).
 
 [For Transit Clojurescript, see here](https://github.com/cognitect/transit-cljs).
 
-Then, simply:
+Then :
 
 ```clojure
 (require '[cognitect.transit           :as transit]
          '[dvlopt.fdat                 :as fdat]
          '[dvlopt.fdat.plugins.transit :as fdat.plugins.transit])
 
-;; We already prepare the registry, so we do not forget
-
-(fdat/register {'clojure.core/range range})
 
 ;; Returns an argument map for Transit writers, contains :handlers and
 ;; :transform.
@@ -77,14 +72,6 @@ Then, simply:
   (transit/read (transit/reader :json
                                 {:handlers (fdat.plugins.transit/handler-in)})
                 x))
-
-
-;; Then
-
-(def rng
-     (-> (fdat/? (range))
-         serialize
-         deserialize))
 ```
 
 ## License

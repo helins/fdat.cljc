@@ -1,20 +1,17 @@
 # FDat.plugins.nippy
 
 [![Clojars
-Project](https://img.shields.io/clojars/v/dvlopt/fdat.svg)](https://clojars.org/dvlopt/fdat)
-
-[![Clojars
 Project](https://img.shields.io/clojars/v/dvlopt/fdat.plugins.nippy.svg)](https://clojars.org/dvlopt/fdat.plugins.nippy)
 
-
-Compatible with Clojurescript.
-
-FDat plugin for [Nippy](https://github.com/ptaoussanis/nippy).
+[FDat](https://github.com/dvlopt/fdat.cljc) plugin for
+[Nippy](https://github.com/ptaoussanis/nippy). More examples are provided in the
+core README.
 
 ## Usage
 
-The core FDat library and Nippy must be added to dependencies, they are not
-pulled by default so the user can easily choose any modern version.
+Packaged with the latest version of the core [FDat
+library](https://github.com/dvlopt/fdat.cljc) but Nippy must be provided by the
+user.
 
 Then, simply:
 
@@ -28,19 +25,9 @@ Then, simply:
 
 (fdat.plugins.nippy/init)
 
-;; Will use the provided one
+;; We could have provided one
 
 (fdat.plugins.nippy/init my-registry)
-
-;; Adding this key to the global registry
-
-(fdat/register {'clojure.core/range range})
-
-;; Then
-(def rng
-     (-> (fdat/? (range))
-         nippy/freeze
-         nippy/thaw))
 ```
 
 ## License
