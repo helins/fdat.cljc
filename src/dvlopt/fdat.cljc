@@ -507,47 +507,7 @@
   "Captures how an `IMeta` is created and puts that information into the metadata of this very same `IMeta`,
    making it eligeable for serialization.
 
-   README provides complete examples of the various kind of forms this macro understands.
-
-   Analyses the given form which is a function call, extracting the first item as a key, the rest as args,
-   and puts this information in the metadata after the form is evaled.
-
-   ```clojure
-   (? (range))
-
-   (= (meta *1)
-      {::key 'clojure.core/range})
-
-
-   (? (my-f 1 2 3))
-
-   (= (meta *1)
-      {::key  'my.namespace/my-f
-       ::args [1 2 3]})     
-   ```
-
-   Providing a key explicitly:
-
-   ```clojure
-   (? ::my-key
-      (my-f 1 2 3))
-   ```
-
-   When supplied explicitely, a key is used as is. A key must be a qualified symbol or qualified keyword.
-
-   Uses [[snapshot]] under the hood.
-  
-   README documents how this capturing can be turned on a per-namespace basis.
-
-   `::apply` specifies how `::args` are applied the the snapshot:
-
-   | Value | Meaning |
-   |---|---|
-   | nil | Must be removed from registry |
-   | :none | No application, `::args` are simply ignored (`default`) |
-   | :variadic | Number of `::args` can vary (flexible but less efficient) |
-   | 0 <= n <= 8 | Fixed number of `::args`, will provide efficient function application |"
-
+   README provides complete examples of the various kind of forms this macro understands."
 
   ([expr]
 
