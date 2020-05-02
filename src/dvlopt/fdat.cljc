@@ -515,13 +515,14 @@
              (let [sym (first expr)]
                (cond
                  (#{'def
-                    'defn} sym) -?interned
+                    'defn
+                    'defn-} sym) -?interned
                  (= sym
-                    'partial)   -?partial
+                    'partial)    -?partial
                  (#{'fn
-                    'fn*} sym)  -?unknown
-                 (symbol? sym)  -?call
-                 :else          -?unknown))
+                    'fn*} sym)   -?unknown
+                 (symbol? sym)   -?call
+                 :else           -?unknown))
              -?unknown)]
      (f &env
         expr

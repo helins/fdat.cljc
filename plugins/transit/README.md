@@ -1,7 +1,7 @@
 # FDat.plugins.transit
 
 [![Clojars
-Project](https://img.shields.io/clojars/v/dvlopt/fdat.plugins.transit.svg)](https://clojars.org/dvlopt/fdat.plugins.transit.cljc)
+Project](https://img.shields.io/clojars/v/dvlopt/fdat.plugins.transit.svg)](https://clojars.org/dvlopt/fdat.plugins.transit)
 
 Compatible with Clojurescript.
 

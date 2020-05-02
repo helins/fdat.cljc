@@ -337,8 +337,8 @@ that alias instead of `+`:
 
 ### Registries <a name="registries">
 
-At first, one might think it is cumbersome having add all those `IMetas` to some
-`registry`. Actually, this is a feature.
+At first, one might think it is cumbersome having to add all those `IMetas` to
+some `registry`. Actually, this is a feature.
 
 First of all, a `registry` represent some context. Let us imagine an online
 shopping app. The frontend is built in Clojurescript while the backend is built
@@ -384,15 +384,15 @@ based on the namespace of the key not-found:
 Plato was keen about making a distinction between the physical world and the
 "world of Ideas". A pale copy from an inimitable perfection.
 
-Data structures, our beloved maps and vectors, pure data, often are a mere
+Data structures, our beloved maps and vectors, pure data, often are but a mere
 instance of an absolute idea. For instance, let us imagine we have a vector of
 random numbers, nested somewhere in the deep maps of our program. Those random
 numbers are used for some cryptographic purposes.
 
-If we wanted to serialize that state of our program, it would probably a
-terrible idea to serialize those random numbers and sharing them. How unsafe.
-What we would like to serialize is the idea of a vector of random numbers,
-rather than that specific vector.
+If we wanted to serialize that state of our program, it would probably be a
+terrible idea to serialize those random numbers and share them as such. How
+unsafe.  What we would like to serialize is the idea of a vector of random
+numbers, rather than that specific vector.
 
 ```clojure
 (? ^{::fdat/apply 1}
