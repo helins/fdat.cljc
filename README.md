@@ -60,7 +60,7 @@ For instance, using the plugin for the excellent
 
 
 (def hello-2
-     (nippy/thaw bytes))
+     (nippy/thaw ba))
 
 
 (println (hello "world"))
