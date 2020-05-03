@@ -17,7 +17,7 @@
 
   {:author "Adam Helinski"}
 
-  (:require         [cljs.analyzer.api]
+  (:require #?(:clj [cljs.analyzer.api])
             #?(:clj [dvlopt.fdat.track :as track])
                     [dvlopt.void       :as void]))
 

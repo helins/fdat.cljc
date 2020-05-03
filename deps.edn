@@ -1,6 +1,7 @@
 {:deps
- {dvlopt/void         {:mvn/version "1.0.1"}
-  org.clojure/clojure {:mvn/version "1.10.1"}}
+ {dvlopt/void               {:mvn/version "1.0.1"}
+  org.clojure/clojure       {:mvn/version "1.10.1"}
+  org.clojure/clojurescript {:mvn/version "1.10.753"}}
 
  :paths
  ["src"]

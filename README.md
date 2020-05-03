@@ -212,12 +212,15 @@ Remember that `?` can capture function calls and keep track of arguments.
     ::fdat/args [3]})
 ```
 
-That is precisely why we can do the following. The Nippy plugin extends Nippy so
-that `IMetas` with a `key` receive special treatment: they are discarded, only
-their metadata, being a simple map, is serialized. At deserialization, this
-metadata map containing a `key` and (if needed) `arguments` is automatically
-used against a `registry` (defaulting to the global one) in order to produce (or
-rather "reproduce") the intended `IMeta`.
+Note that what needs to be in the registry in not `plus-3` but the key it refers
+to, which is `user/curried-add` and which we already added indeed.
+
+For instance, and this is generally what any plugin does, the Nippy plugin
+extends Nippy so that `IMetas` with a `key` receive special treatment: they are
+discarded, only their metadata, being a simple map, is serialized. At
+deserialization, this metadata map containing a `key` and (if needed)
+`arguments` is automatically used against a `registry` (defaulting to the global
+one) in order to produce (or rather "reproduce") the intended `IMeta`.
 
 ```clojure
 (= 7
@@ -262,6 +265,11 @@ serializable data. But this function itself has metadata about how to serialize
 it, indeed we have captured `add` using `?`. Due to the "depth-first" manner
 serializers operate, this just works: `add` will be serialized before this outer
 metadata map. As long as we use `?` properly, any `IMeta` can be an argument.
+
+Once again, the result of that partial application is not what needs to be in
+the registry but rather `add` because it is part of the metadata that needs to
+be serializable. It means that once we have `add` in our registry, we can
+capture any partial application without caring further.
 
 Do not feel discouraged if your head is spinning a little bit. It shows how a
 simple idea can expand.
