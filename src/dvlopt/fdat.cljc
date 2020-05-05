@@ -7,8 +7,6 @@
 
    The serialization itself happens via a plugin (eg. Nippy plugin).
 
-   Also provides what is needed to write a plugin for a serializer.
-
    <!>
 
    It is important to read the README first which truly provides the big picture.
@@ -17,9 +15,9 @@
 
   {:author "Adam Helinski"}
 
-  (:require #?(:clj [cljs.analyzer.api])
-            #?(:clj [dvlopt.fdat.track :as track])
-                    [dvlopt.void       :as void]))
+  #?(:clj (:require [cljs.analyzer.api]
+                    [dvlopt.fdat.track :as track]
+                    [dvlopt.void       :as void])))
 
 
 
@@ -526,9 +524,12 @@
              -?unknown)]
      (f &env
         expr
-        (-> (meta expr)
-            (dissoc :column)
-            (dissoc :line)))))))
+        (dissoc (meta expr)
+                :column
+                :end-column
+                :end-line
+                :file
+                :line))))))
 
 
 

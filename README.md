@@ -348,7 +348,7 @@ that alias instead of `+`:
 At first, one might think it is cumbersome having to add all those `IMetas` to
 some `registry`. Actually, this is a feature.
 
-First of all, a `registry` represent some context. Let us imagine an online
+First of all, a `registry` represents some context. Let us imagine an online
 shopping app. The frontend is built in Clojurescript while the backend is built
 in Clojure.
 

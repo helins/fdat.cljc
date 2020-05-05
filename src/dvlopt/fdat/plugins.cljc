@@ -4,6 +4,8 @@
   
    The interested reader will carefully pay attention to how the current ones have been
    implemented. It is not that complicated but it is not exactly straightforward."
+
+  {:author "Adam Helinski"}
   
   (:require [dvlopt.fdat :as fdat]
             [dvlopt.void :as void]))
